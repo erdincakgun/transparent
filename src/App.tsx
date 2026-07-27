@@ -1,11 +1,18 @@
-import { Button } from "@/components/ui/button";
+import { useEffect } from "react";
+import { createClient } from "@/lib/supabase/client";
 
-function App() {
-  return (
-    <div className="flex min-h-svh flex-col items-center justify-center">
-      <Button>Click me</Button>
-    </div>
-  );
+export default function AuthenticatedRoute() {
+  useEffect(() => {
+    const checkAuth = async () => {
+      const client = createClient();
+      const { error } = await client.auth.getUser();
+
+      if (error) {
+        location.href = "/login";
+      }
+    };
+    checkAuth();
+  }, []);
+
+  return <div>Authenticated page</div>;
 }
-
-export default App;
