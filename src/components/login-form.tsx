@@ -39,21 +39,30 @@ export function LoginForm({
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <form onSubmit={handleSubmit}>
         <FieldGroup>
-          <div className="flex flex-col items-center gap-2 text-center">
-            <h1 className="text-xl font-bold">Welcome to Transparent</h1>
-          </div>
-          <Field>
-            <Input
-              id="email"
-              name="email"
-              type="email"
-              placeholder="Type your email address"
-              required
-            />
-          </Field>
-          <Field>
-            <Button type="submit">Login</Button>
-          </Field>
+          {emailSent ? (
+            <>
+              <Field>
+                <p className="text-center text-sm text-muted-foreground">
+                  Check your inbox
+                </p>
+              </Field>
+            </>
+          ) : (
+            <>
+              <Field>
+                <Input
+                  id="email"
+                  name="email"
+                  type="email"
+                  placeholder="Enter your email address"
+                  required
+                />
+              </Field>
+              <Field>
+                <Button type="submit">Login</Button>
+              </Field>
+            </>
+          )}
         </FieldGroup>
       </form>
     </div>
