@@ -4,11 +4,14 @@ import { Field, FieldGroup } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { createClient } from "@/lib/supabase/client";
 import { useState } from "react";
+import { Turnstile } from "@marsidev/react-turnstile";
+import type {} from "@marsidev/react-turnstile";
 
 export function LoginForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
+  const [captchaToken, setCaptchaToken] = useState<string | undefined>();
   const [emailSent, setEmailSent] = useState(false);
   const supabase = createClient();
 
@@ -24,6 +27,7 @@ export function LoginForm({
       options: {
         shouldCreateUser: true,
         emailRedirectTo: import.meta.env.VITE_SITE_URL!,
+        captchaToken: captchaToken,
       },
     });
 
@@ -61,6 +65,12 @@ export function LoginForm({
               <Field>
                 <Button type="submit">Login</Button>
               </Field>
+              <Turnstile
+                siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
+                onSuccess={(token) => {
+                  setCaptchaToken(token);
+                }}
+              />
             </>
           )}
         </FieldGroup>
