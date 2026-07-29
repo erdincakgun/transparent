@@ -23,9 +23,14 @@ export default function AuthenticatedRoute() {
     checkAuth();
   }, []);
 
+  const test = async () => {
+    const {} = await supabase.from("accounts").insert([{ name: "test" }]);
+  };
+
   return (
     <div>
       Authenticated page
+      <Button onClick={test}>Test</Button>
       <Button onClick={signOut}>Sign Out</Button>
     </div>
   );
