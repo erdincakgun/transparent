@@ -16,3 +16,9 @@ ALTER TABLE public.organizations_members ADD CONSTRAINT organizations_members_pk
 GRANT MAINTAIN, REFERENCES, TRIGGER, TRUNCATE ON public.organizations_members TO anon;
 GRANT MAINTAIN, REFERENCES, TRIGGER, TRUNCATE ON public.organizations_members TO authenticated;
 GRANT MAINTAIN, REFERENCES, TRIGGER, TRUNCATE ON public.organizations_members TO service_role;
+REVOKE ALL ON public.ledgers_members FROM anon;
+REVOKE ALL ON public.organizations_members FROM anon;
+REVOKE DELETE, MAINTAIN, REFERENCES, TRIGGER, TRUNCATE, UPDATE ON public.ledgers_members FROM authenticated;
+REVOKE ALL ON public.ledgers_members FROM service_role;
+REVOKE DELETE, MAINTAIN, REFERENCES, TRIGGER, TRUNCATE, UPDATE ON public.organizations_members FROM authenticated;
+REVOKE ALL ON public.organizations_members FROM service_role;
