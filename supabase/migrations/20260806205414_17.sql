@@ -22,3 +22,5 @@ REVOKE DELETE, MAINTAIN, REFERENCES, TRIGGER, TRUNCATE, UPDATE ON public.ledgers
 REVOKE ALL ON public.ledgers_members FROM service_role;
 REVOKE DELETE, MAINTAIN, REFERENCES, TRIGGER, TRUNCATE, UPDATE ON public.organizations_members FROM authenticated;
 REVOKE ALL ON public.organizations_members FROM service_role;
+GRANT DELETE ON public.ledgers_members TO authenticated;
+GRANT DELETE ON public.organizations_members TO authenticated;
