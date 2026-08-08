@@ -2,10 +2,10 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Field, FieldGroup } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { createClient } from "@/lib/supabase/client";
 import { useState } from "react";
 import { Turnstile } from "@marsidev/react-turnstile";
 import type {} from "@marsidev/react-turnstile";
+import supabase from "@/lib/supabase/client";
 
 export function LoginForm({
   className,
@@ -13,7 +13,6 @@ export function LoginForm({
 }: React.ComponentProps<"div">) {
   const [captchaToken, setCaptchaToken] = useState<string | undefined>();
   const [emailSent, setEmailSent] = useState(false);
-  const supabase = createClient();
 
   async function handleSubmit(e: { preventDefault: () => void; target: any }) {
     e.preventDefault();
