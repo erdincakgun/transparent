@@ -14,7 +14,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
-import { createClient } from "@/lib/supabase/client";
+import supabase from "@/lib/supabase/client";
 import {
   ChevronsUpDownIcon,
   SparklesIcon,
@@ -35,7 +35,6 @@ export function NavUser({
   };
 }) {
   const { isMobile } = useSidebar();
-  const supabase = createClient();
   const navigate = useNavigate();
 
   const signOut = () => {
