@@ -1,9 +1,7 @@
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuGroup,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
@@ -14,10 +12,6 @@ import {
 } from "@/components/ui/sidebar";
 import supabase from "@/lib/supabase/client";
 import {
-  SparklesIcon,
-  BadgeCheckIcon,
-  CreditCardIcon,
-  BellIcon,
   LogOutIcon,
   MoreHorizontalIcon,
 } from "lucide-react";
