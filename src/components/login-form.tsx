@@ -67,6 +67,10 @@ export function LoginForm({
               </Field>
               <Turnstile
                 siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
+                options={{
+                  size: "flexible",
+                  appearance: "interaction-only",
+                }}
                 onSuccess={(token) => {
                   setCaptchaToken(token);
                 }}
