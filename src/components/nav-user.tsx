@@ -44,10 +44,13 @@ export function NavUser({
         <DropdownMenu>
           <DropdownMenuTrigger
             render={
-              <SidebarMenuButton size="lg" className="aria-expanded:bg-muted" />
+              <SidebarMenuButton
+                size="lg"
+                className="aria-expanded:bg-muted group-data-[collapsible=icon]:p-2!"
+              />
             }
           >
-            <div className="grid flex-1 text-left text-sm leading-tight">
+            <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
               <span className="truncate text-xs">{user.email}</span>
             </div>
             <MoreHorizontalIcon className="ml-auto size-4" />
