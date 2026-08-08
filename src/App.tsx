@@ -1,10 +1,8 @@
 import { useEffect } from "react";
-import { createClient } from "@/lib/supabase/client";
 import Dashboard from "./layouts/dashboard";
+import supabase from "./lib/supabase/client";
 
-export default function AuthenticatedRoute() {
-  const supabase = createClient();
-
+export default function App() {
   useEffect(() => {
     const checkAuth = async () => {
       const { error } = await supabase.auth.getUser();
