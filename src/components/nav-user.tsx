@@ -11,10 +11,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import supabase from "@/lib/supabase/client";
-import {
-  LogOutIcon,
-  MoreHorizontalIcon,
-} from "lucide-react";
+import { LogOutIcon, MoreHorizontalIcon } from "lucide-react";
 import { useNavigate } from "react-router";
 
 export function NavUser({
@@ -29,7 +26,7 @@ export function NavUser({
 
   const signOut = () => {
     supabase.auth.signOut();
-    navigate("/login");
+    navigate("/login", { replace: true });
   };
 
   return (

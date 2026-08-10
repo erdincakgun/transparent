@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router";
 import LoginPage from "@/pages/login.tsx";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
+import LedgerCreatePage from "@/pages/ledger-create.tsx";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
@@ -15,6 +16,7 @@ createRoot(document.getElementById("root")!).render(
           <Routes>
             <Route path="/" element={<App />} />
             <Route path="/login" element={<LoginPage />} />
+            <Route path="/ledger-create" element={<LedgerCreatePage />} />
           </Routes>
         </BrowserRouter>
       </ThemeProvider>

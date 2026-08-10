@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 import supabase from "@/lib/supabase/client";
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router";
 
 const data = {
   navMain: [
@@ -130,6 +131,7 @@ const data = {
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
+  const navigate = useNavigate();
   const [email, setEmail] = useState<string | undefined>();
   const [ledgers, setLedgers] = useState<{ id: string; name: string }[]>([]);
 
@@ -143,10 +145,15 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         .select("id, name")
         .order("name");
 
-      setLedgers(ledgerData ?? []);
+      if (!ledgerData?.length) {
+        navigate("/ledger-create", { replace: true });
+        return;
+      }
+
+      setLedgers(ledgerData);
     };
     load();
-  }, []);
+  }, [navigate]);
 
   return (
     <Sidebar collapsible="icon" {...props}>
