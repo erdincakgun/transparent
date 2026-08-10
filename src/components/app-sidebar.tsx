@@ -1,5 +1,5 @@
 import * as React from "react";
-import { NavItems } from "@/components/nav-projects";
+import { NavItems } from "@/components/nav-app";
 import { NavUser } from "@/components/nav-user";
 import { LedgerSwitcher } from "@/components/ledgers-switcher";
 import {
