@@ -2,7 +2,7 @@ import * as React from "react";
 import { NavMain } from "@/components/nav-main";
 import { NavProjects } from "@/components/nav-projects";
 import { NavUser } from "@/components/nav-user";
-import { TeamSwitcher } from "@/components/team-switcher";
+import { LedgerSwitcher } from "@/components/team-switcher";
 import {
   Sidebar,
   SidebarContent,
@@ -11,9 +11,6 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar";
 import {
-  GalleryVerticalEndIcon,
-  AudioLinesIcon,
-  TerminalIcon,
   TerminalSquareIcon,
   BotIcon,
   BookOpenIcon,
@@ -26,23 +23,6 @@ import supabase from "@/lib/supabase/client";
 import { useState, useEffect } from "react";
 
 const data = {
-  teams: [
-    {
-      name: "Acme Inc",
-      logo: <GalleryVerticalEndIcon />,
-      plan: "Enterprise",
-    },
-    {
-      name: "Acme Corp.",
-      logo: <AudioLinesIcon />,
-      plan: "Startup",
-    },
-    {
-      name: "Evil Corp.",
-      logo: <TerminalIcon />,
-      plan: "Free",
-    },
-  ],
   navMain: [
     {
       title: "Playground",
@@ -151,11 +131,19 @@ const data = {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const [email, setEmail] = useState<string | undefined>();
+  const [ledgers, setLedgers] = useState<{ id: string; name: string }[]>([]);
 
   useEffect(() => {
     const load = async () => {
       const { data: userData } = await supabase.auth.getUser();
       setEmail(userData.user?.email);
+
+      const { data: ledgerData } = await supabase
+        .from("ledgers")
+        .select("id, name")
+        .order("name");
+
+      setLedgers(ledgerData ?? []);
     };
     load();
   }, []);
@@ -163,7 +151,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <TeamSwitcher teams={data.teams} />
+        <LedgerSwitcher ledgers={ledgers} />
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
