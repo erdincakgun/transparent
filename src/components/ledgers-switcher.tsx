@@ -16,9 +16,11 @@ import {
 import supabase from "@/lib/supabase/client";
 import { ChevronsUpDownIcon, PlusIcon } from "lucide-react";
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router";
 
 export function LedgerSwitcher() {
   const { isMobile } = useSidebar();
+  const navigate = useNavigate();
 
   type Ledger = { id: string; name: string };
 
@@ -95,7 +97,7 @@ export function LedgerSwitcher() {
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem className="gap-2 p-2">
+              <DropdownMenuItem className="gap-2 p-2" onClick={() => navigate("/ledger-create")}>
                 <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
                   <PlusIcon className="size-4" />
                 </div>
