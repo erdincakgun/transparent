@@ -4,12 +4,14 @@ import { Field, FieldGroup } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import supabase from "@/lib/supabase/client";
+import { useNavigate } from "react-router";
 
 export function LedgerCreateForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
-  const [submitting, setSubmitting] = useState(false);
+  const navigate = useNavigate();
+  const [submitted, setSubmitted] = useState(false);
 
   async function handleSubmit(e: { preventDefault: () => void; target: any }) {
     e.preventDefault();
@@ -18,19 +20,11 @@ export function LedgerCreateForm({
     const formData = new FormData(form);
     const name = formData.get("name")?.toString() ?? "";
 
+    setSubmitted(true);
+
     const id = crypto.randomUUID();
-
-    setSubmitting(true);
-
     const { error } = await supabase.from("ledgers").insert({ id, name });
-
-    if (error) {
-      console.log(error);
-      alert(error.message);
-      setSubmitting(false);
-    } else {
-      window.location.href = `/ledgers/${id}`;
-    }
+    if (!error) navigate(`/ledgers/${id}`, { replace: true });
   }
 
   return (
@@ -48,7 +42,7 @@ export function LedgerCreateForm({
             />
           </Field>
           <Field>
-            <Button type="submit" disabled={submitting}>
+            <Button type="submit" disabled={submitted}>
               Create ledger
             </Button>
           </Field>

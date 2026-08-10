@@ -267,7 +267,7 @@ revoke all on public.accounts from anon, authenticated, service_role;
 revoke all on public.transactions from anon, authenticated, service_role;
 
 grant select on public.ledgers to authenticated;
-grant insert (name, description) on public.ledgers to authenticated;
+grant insert (id, name, description) on public.ledgers to authenticated;
 
 grant select on public.ledgers_users to authenticated;
 grant insert (ledger_id, user_id) on public.ledgers_users to authenticated;
