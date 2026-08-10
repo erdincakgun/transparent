@@ -69,11 +69,11 @@ export function LedgerSwitcher() {
               />
             }
           >
-            <div className="grid flex-1 text-left text-sm leading-tight">
+            <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
               <span className="truncate font-medium">{activeLedger?.name}</span>
               <span className="truncate text-xs">{activeLedger?.id}</span>
             </div>
-            <ChevronsUpDownIcon className="ml-auto" />
+            <ChevronsUpDownIcon className="mx-auto" />
           </DropdownMenuTrigger>
           <DropdownMenuContent
             className="w-fit"
@@ -97,7 +97,10 @@ export function LedgerSwitcher() {
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem className="gap-2 p-2" onClick={() => navigate("/ledger-create")}>
+              <DropdownMenuItem
+                className="gap-2 p-2"
+                onClick={() => navigate("/ledger-create")}
+              >
                 <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
                   <PlusIcon className="size-4" />
                 </div>
