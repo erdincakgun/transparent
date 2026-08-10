@@ -1,5 +1,3 @@
-import * as React from "react";
-
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -15,18 +13,32 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+import supabase from "@/lib/supabase/client";
 import { ChevronsUpDownIcon, PlusIcon } from "lucide-react";
+import { useState, useEffect } from "react";
 
-export function LedgerSwitcher({
-  ledgers,
-}: {
-  ledgers: { id: string; name: string }[];
-}) {
+export function LedgerSwitcher() {
   const { isMobile } = useSidebar();
-  const [activeLedger, setActiveLedger] = React.useState(ledgers[0]);
-  if (!activeLedger) {
-    return null;
-  }
+  const [ledgers, setLedgers] = useState<{ id: string; name: string }[]>([]);
+
+  const [activeLedger, setActiveLedger] = useState<{
+    id: string;
+    name: string;
+  }>();
+
+  useEffect(() => {
+    const load = async () => {
+      const { data: ledgerData } = await supabase
+        .from("ledgers")
+        .select("id, name")
+        .order("name");
+
+      setLedgers(ledgerData ?? []);
+      setActiveLedger(ledgers[0]);
+    };
+    load();
+  }, []);
+
   return (
     <SidebarMenu>
       <SidebarMenuItem>
@@ -40,8 +52,8 @@ export function LedgerSwitcher({
             }
           >
             <div className="grid flex-1 text-left text-sm leading-tight">
-              <span className="truncate font-medium">{activeLedger.name}</span>
-              <span className="truncate text-xs">{activeLedger.id}</span>
+              <span className="truncate font-medium">{activeLedger?.name}</span>
+              <span className="truncate text-xs">{activeLedger?.id}</span>
             </div>
             <ChevronsUpDownIcon className="ml-auto" />
           </DropdownMenuTrigger>
