@@ -1,6 +1,4 @@
-"use client"
-
-import * as React from "react"
+import * as React from "react";
 
 import {
   DropdownMenu,
@@ -9,30 +7,25 @@ import {
   DropdownMenuItem,
   DropdownMenuLabel,
   DropdownMenuSeparator,
-  DropdownMenuShortcut,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu";
 import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
   useSidebar,
-} from "@/components/ui/sidebar"
-import { ChevronsUpDownIcon, PlusIcon } from "lucide-react"
+} from "@/components/ui/sidebar";
+import { ChevronsUpDownIcon, PlusIcon } from "lucide-react";
 
-export function TeamSwitcher({
-  teams,
+export function LedgerSwitcher({
+  ledgers,
 }: {
-  teams: {
-    name: string
-    logo: React.ReactNode
-    plan: string
-  }[]
+  ledgers: { id: string; name: string }[];
 }) {
-  const { isMobile } = useSidebar()
-  const [activeTeam, setActiveTeam] = React.useState(teams[0])
-  if (!activeTeam) {
-    return null
+  const { isMobile } = useSidebar();
+  const [activeLedger, setActiveLedger] = React.useState(ledgers[0]);
+  if (!activeLedger) {
+    return null;
   }
   return (
     <SidebarMenu>
@@ -46,12 +39,9 @@ export function TeamSwitcher({
               />
             }
           >
-            <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground">
-              {activeTeam.logo}
-            </div>
             <div className="grid flex-1 text-left text-sm leading-tight">
-              <span className="truncate font-medium">{activeTeam.name}</span>
-              <span className="truncate text-xs">{activeTeam.plan}</span>
+              <span className="truncate font-medium">{activeLedger.name}</span>
+              <span className="truncate text-xs">{activeLedger.id}</span>
             </div>
             <ChevronsUpDownIcon className="ml-auto" />
           </DropdownMenuTrigger>
@@ -63,19 +53,15 @@ export function TeamSwitcher({
           >
             <DropdownMenuGroup>
               <DropdownMenuLabel className="text-xs text-muted-foreground">
-                Teams
+                Ledgers
               </DropdownMenuLabel>
-              {teams.map((team, index) => (
+              {ledgers.map((ledger, _) => (
                 <DropdownMenuItem
-                  key={team.name}
-                  onClick={() => setActiveTeam(team)}
+                  key={ledger.name}
+                  onClick={() => setActiveLedger(ledger)}
                   className="gap-2 p-2"
                 >
-                  <div className="flex size-6 items-center justify-center rounded-md border">
-                    {team.logo}
-                  </div>
-                  {team.name}
-                  <DropdownMenuShortcut>⌘{index + 1}</DropdownMenuShortcut>
+                  {ledger.name}
                 </DropdownMenuItem>
               ))}
             </DropdownMenuGroup>
@@ -86,7 +72,7 @@ export function TeamSwitcher({
                   <PlusIcon className="size-4" />
                 </div>
                 <div className="font-medium text-muted-foreground">
-                  Add team
+                  Add ledger
                 </div>
               </DropdownMenuItem>
             </DropdownMenuGroup>
@@ -94,5 +80,5 @@ export function TeamSwitcher({
         </DropdownMenu>
       </SidebarMenuItem>
     </SidebarMenu>
-  )
+  );
 }
