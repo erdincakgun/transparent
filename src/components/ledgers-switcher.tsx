@@ -19,24 +19,41 @@ import { useState, useEffect } from "react";
 
 export function LedgerSwitcher() {
   const { isMobile } = useSidebar();
-  const [ledgers, setLedgers] = useState<{ id: string; name: string }[]>([]);
+
+  type Ledger = { id: string; name: string };
+
+  const [ledgers, setLedgers] = useState<Ledger[]>([]);
 
   const [activeLedger, setActiveLedger] = useState<{
     id: string;
     name: string;
   }>();
 
+  const ACTIVE_LEDGER_STORAGE_KEY = "transparent:active-ledger-id";
+
   useEffect(() => {
     const load = async () => {
-      const { data: ledgerData } = await supabase
+      const { data } = await supabase
         .from("ledgers")
         .select("id, name")
         .order("name");
 
-      setLedgers(ledgerData ?? []);
+      const ledgerData = data ?? [];
+      setLedgers(ledgerData);
+
+      const storedId = localStorage.getItem(ACTIVE_LEDGER_STORAGE_KEY);
+
+      setActiveLedger(
+        ledgerData.find((ledger) => ledger.id === storedId) ?? ledgerData[0],
+      );
     };
     load();
   }, []);
+
+  const selectLedger = (ledger: Ledger) => {
+    setActiveLedger(ledger);
+    localStorage.setItem(ACTIVE_LEDGER_STORAGE_KEY, ledger.id);
+  };
 
   return (
     <SidebarMenu>
@@ -69,7 +86,7 @@ export function LedgerSwitcher() {
               {ledgers.map((ledger, _) => (
                 <DropdownMenuItem
                   key={ledger.name}
-                  onClick={() => setActiveLedger(ledger)}
+                  onClick={() => selectLedger(ledger)}
                   className="gap-2 p-2"
                 >
                   {ledger.name}
