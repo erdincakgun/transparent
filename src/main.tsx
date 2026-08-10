@@ -7,6 +7,7 @@ import LoginPage from "@/pages/login.tsx";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
 import LedgerCreatePage from "@/pages/ledger-create.tsx";
+import { RequireAuth } from "./components/require-auth.tsx";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
@@ -14,9 +15,11 @@ createRoot(document.getElementById("root")!).render(
       <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<App />} />
             <Route path="/login" element={<LoginPage />} />
-            <Route path="/ledger-create" element={<LedgerCreatePage />} />
+            <Route element={<RequireAuth />}>
+              <Route path="/" element={<App />} />
+              <Route path="/ledger-create" element={<LedgerCreatePage />} />
+            </Route>
           </Routes>
         </BrowserRouter>
       </ThemeProvider>
