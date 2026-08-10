@@ -8,6 +8,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
 import LedgerCreatePage from "@/pages/ledger-create.tsx";
 import { RequireAuth } from "./components/require-auth.tsx";
+import Dashboard from "./layouts/dashboard.tsx";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
@@ -17,7 +18,9 @@ createRoot(document.getElementById("root")!).render(
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route element={<RequireAuth />}>
-              <Route path="/" element={<App />} />
+              <Route element={<Dashboard />}>
+                <Route path="/" element={<App />} />
+              </Route>
               <Route path="/ledger-create" element={<LedgerCreatePage />} />
             </Route>
           </Routes>
