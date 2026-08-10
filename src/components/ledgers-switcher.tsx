@@ -34,7 +34,6 @@ export function LedgerSwitcher() {
         .order("name");
 
       setLedgers(ledgerData ?? []);
-      setActiveLedger(ledgers[0]);
     };
     load();
   }, []);
