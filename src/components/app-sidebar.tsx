@@ -133,24 +133,18 @@ const data = {
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const navigate = useNavigate();
   const [email, setEmail] = useState<string | undefined>();
-  const [ledgers, setLedgers] = useState<{ id: string; name: string }[]>([]);
 
   useEffect(() => {
     const load = async () => {
       const { data: userData } = await supabase.auth.getUser();
       setEmail(userData.user?.email);
 
-      const { data: ledgerData } = await supabase
-        .from("ledgers")
-        .select("id, name")
-        .order("name");
+      const { data: ledgerData } = await supabase.from("ledgers").select("id");
 
       if (!ledgerData?.length) {
         navigate("/ledger-create", { replace: true });
         return;
       }
-
-      setLedgers(ledgerData);
     };
     load();
   }, [navigate]);
@@ -158,7 +152,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   return (
     <Sidebar collapsible="icon" {...props}>
       <SidebarHeader>
-        <LedgerSwitcher ledgers={ledgers} />
+        <LedgerSwitcher />
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
