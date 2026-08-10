@@ -2,7 +2,7 @@ import * as React from "react";
 import { NavMain } from "@/components/nav-main";
 import { NavProjects } from "@/components/nav-projects";
 import { NavUser } from "@/components/nav-user";
-import { LedgerSwitcher } from "@/components/team-switcher";
+import { LedgerSwitcher } from "@/components/ledgers-switcher";
 import {
   Sidebar,
   SidebarContent,
