@@ -15,11 +15,11 @@ export function NavItems({
   }[];
 }) {
   return (
-    <SidebarGroup className="group-data-[collapsible=icon]:hidden">
+    <SidebarGroup>
       <SidebarMenu>
         {projects.map((item) => (
           <SidebarMenuItem key={item.name}>
-            <SidebarMenuButton render={<a href={item.url} />}>
+            <SidebarMenuButton tooltip={item.name} render={<a href={item.url} />}>
               {item.icon}
               <span>{item.name}</span>
             </SidebarMenuButton>
