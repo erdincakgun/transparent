@@ -8,9 +8,17 @@ import supabase from "@/lib/supabase/client";
 
 type Account = { id: string; name: string; description: string | null };
 
+type AccountBalance = { id: string; balance: string };
+
+const balanceFormat = new Intl.NumberFormat(undefined, {
+  minimumFractionDigits: 2,
+  maximumFractionDigits: 4,
+});
+
 export default function AccountsPage() {
   const { activeLedger, loading: ledgerLoading } = useLedger();
   const [accounts, setAccounts] = useState<Account[]>([]);
+  const [balances, setBalances] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string>();
 
@@ -21,6 +29,7 @@ export default function AccountsPage() {
 
     if (!ledgerId) {
       setAccounts([]);
+      setBalances({});
       setLoading(false);
       return;
     }
@@ -31,16 +40,30 @@ export default function AccountsPage() {
       setLoading(true);
       setError(undefined);
 
-      const { data, error } = await supabase
-        .from("accounts")
-        .select("id, name, description")
-        .eq("ledger_id", ledgerId)
-        .order("name");
+      const [accountResult, balanceResult] = await Promise.all([
+        supabase
+          .from("accounts")
+          .select("id, name, description")
+          .eq("ledger_id", ledgerId)
+          .order("name"),
+        supabase
+          .from("account_balances")
+          .select("id, balance::text")
+          .eq("ledger_id", ledgerId),
+      ]);
 
       if (cancelled) return;
 
-      setAccounts(data ?? []);
-      setError(error?.message);
+      setAccounts(accountResult.data ?? []);
+      setBalances(
+        Object.fromEntries(
+          ((balanceResult.data ?? []) as AccountBalance[]).map((row) => [
+            row.id,
+            row.balance,
+          ]),
+        ),
+      );
+      setError((accountResult.error ?? balanceResult.error)?.message);
       setLoading(false);
     };
 
@@ -78,13 +101,23 @@ export default function AccountsPage() {
       ) : accounts.length ? (
         <div className="divide-y rounded-lg border">
           {accounts.map((account) => (
-            <div key={account.id} className="flex flex-col gap-0.5 px-4 py-3">
-              <span className="text-sm font-medium">{account.name}</span>
-              {account.description ? (
-                <span className="text-sm text-muted-foreground">
-                  {account.description}
+            <div
+              key={account.id}
+              className="flex items-center justify-between gap-4 px-4 py-3"
+            >
+              <div className="flex min-w-0 flex-col gap-0.5">
+                <span className="truncate text-sm font-medium">
+                  {account.name}
                 </span>
-              ) : null}
+                {account.description ? (
+                  <span className="truncate text-sm text-muted-foreground">
+                    {account.description}
+                  </span>
+                ) : null}
+              </div>
+              <span className="shrink-0 text-sm font-medium tabular-nums">
+                {balanceFormat.format(Number(balances[account.id] ?? 0))}
+              </span>
             </div>
           ))}
         </div>
