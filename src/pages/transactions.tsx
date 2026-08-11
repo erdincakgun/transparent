@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
-import { ArrowRightIcon, PlusIcon } from "lucide-react";
+import { ArrowRightIcon, PlusIcon, Undo2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLedger } from "@/components/ledger-provider";
+import { trimAmount } from "@/lib/utils";
 import supabase from "@/lib/supabase/client";
 
 type Transaction = {
@@ -54,7 +55,7 @@ export default function TransactionsPage() {
         supabase
           .from("transactions")
           .select(
-            "id, created_at, from_account_id, to_account_id, amount, description",
+            "id, created_at, from_account_id, to_account_id, amount::text, description",
           )
           .eq("ledger_id", ledgerId)
           .order("created_at", { ascending: false }),
@@ -128,13 +129,35 @@ export default function TransactionsPage() {
                   {transaction.description}
                 </span>
               </div>
-              <div className="flex shrink-0 flex-col items-end gap-0.5">
-                <span className="text-sm font-medium tabular-nums">
-                  {amountFormat.format(Number(transaction.amount))}
-                </span>
-                <span className="text-xs text-muted-foreground">
-                  {dateFormat.format(new Date(transaction.created_at))}
-                </span>
+              <div className="flex shrink-0 items-center gap-3">
+                <div className="flex flex-col items-end gap-0.5">
+                  <span className="text-sm font-medium tabular-nums">
+                    {amountFormat.format(Number(transaction.amount))}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {dateFormat.format(new Date(transaction.created_at))}
+                  </span>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  nativeButton={false}
+                  render={
+                    <Link
+                      to={{
+                        pathname: "/transaction-create",
+                        search: new URLSearchParams({
+                          from: transaction.to_account_id,
+                          to: transaction.from_account_id,
+                          amount: trimAmount(transaction.amount),
+                          description: `revert: ${transaction.description} (${dateFormat.format(new Date(transaction.created_at))})`,
+                        }).toString(),
+                      }}
+                    />
+                  }
+                >
+                  <Undo2 />
+                </Button>
               </div>
             </div>
           ))}
