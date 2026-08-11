@@ -13,6 +13,7 @@ import TransactionsPage from "./pages/transactions.tsx";
 import AccountsPage from "./pages/accounts.tsx";
 import UsersPage from "./pages/users.tsx";
 import AccountCreatePage from "./pages/account-create.tsx";
+import TransactionCreatePage from "./pages/transaction-create.tsx";
 import { LedgerProvider } from "./components/ledger-provider.tsx";
 
 createRoot(document.getElementById("root")!).render(
@@ -38,6 +39,10 @@ createRoot(document.getElementById("root")!).render(
                 </Route>
                 <Route path="/ledger-create" element={<LedgerCreatePage />} />
                 <Route path="/account-create" element={<AccountCreatePage />} />
+                <Route
+                  path="/transaction-create"
+                  element={<TransactionCreatePage />}
+                />
               </Route>
             </Route>
           </Routes>
