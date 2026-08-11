@@ -65,7 +65,7 @@ export function LedgerSwitcher() {
             render={
               <SidebarMenuButton
                 size="lg"
-                className="data-open:bg-sidebar-accent data-open:text-sidebar-accent-foreground"
+                className="data-open:bg-sidebar-accent data-open:text-sidebar-accent-foreground cursor-pointer"
               />
             }
           >
