@@ -18,7 +18,7 @@ const data = {
   navItems: [
     {
       name: "Summary",
-      url: "/summary",
+      url: "/",
       icon: <Summary />,
     },
     {
