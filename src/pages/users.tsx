@@ -1,21 +1,46 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
-import { PlusIcon, Trash2Icon } from "lucide-react";
+import { DownloadIcon, PlusIcon, Trash2Icon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLedger } from "@/components/ledger-provider";
+import { downloadCsv } from "@/lib/csv";
 import supabase from "@/lib/supabase/client";
 
 type LedgerUser = { user_id: string };
+
+const exportColumns = ["ledger_id", "user_id"];
 
 export default function UsersPage() {
   const { activeLedger, loading: ledgerLoading } = useLedger();
   const [users, setUsers] = useState<LedgerUser[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string>();
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
   const [error, setError] = useState<string>();
 
   const ledgerId = activeLedger?.id;
+
+  async function handleExport() {
+    if (!ledgerId) return;
+
+    setExporting(true);
+
+    const { data, error } = await supabase
+      .from("ledgers_users")
+      .select(exportColumns.join(", "))
+      .eq("ledger_id", ledgerId)
+      .order("user_id");
+
+    setExporting(false);
+
+    if (error) {
+      setError(error.message);
+      return;
+    }
+
+    downloadCsv(`ledgers_users-${ledgerId}.csv`, exportColumns, data ?? []);
+  }
 
   useEffect(() => {
     if (ledgerLoading) return;
@@ -64,10 +89,20 @@ export default function UsersPage() {
             ? "Loading users"
             : `${users.length} ${users.length === 1 ? "user" : "users"}`}
         </p>
-        <Button nativeButton={false} render={<Link to="/user-add" />}>
-          <PlusIcon />
-          Add user
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            disabled={exporting || !ledgerId}
+            onClick={handleExport}
+          >
+            <DownloadIcon />
+            Export CSV
+          </Button>
+          <Button nativeButton={false} render={<Link to="/user-add" />}>
+            <PlusIcon />
+            Add user
+          </Button>
+        </div>
       </div>
 
       {error ? (
