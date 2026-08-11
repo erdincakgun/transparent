@@ -1,7 +1,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
-import { BrowserRouter, Routes, Route } from "react-router";
+import { BrowserRouter, Routes, Route, Outlet } from "react-router";
 import LoginPage from "@/pages/login.tsx";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
@@ -13,6 +13,7 @@ import TransactionsPage from "./pages/transactions.tsx";
 import AccountsPage from "./pages/accounts.tsx";
 import UsersPage from "./pages/users.tsx";
 import AccountCreatePage from "./pages/account-create.tsx";
+import { LedgerProvider } from "./components/ledger-provider.tsx";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
@@ -22,14 +23,22 @@ createRoot(document.getElementById("root")!).render(
           <Routes>
             <Route path="/login" element={<LoginPage />} />
             <Route element={<RequireAuth />}>
-              <Route element={<Dashboard />}>
-                <Route path="/" element={<SummaryPage />} />
-                <Route path="/transactions" element={<TransactionsPage />} />
-                <Route path="/accounts" element={<AccountsPage />} />
-                <Route path="/users" element={<UsersPage />} />
+              <Route
+                element={
+                  <LedgerProvider>
+                    <Outlet />
+                  </LedgerProvider>
+                }
+              >
+                <Route element={<Dashboard />}>
+                  <Route path="/" element={<SummaryPage />} />
+                  <Route path="/transactions" element={<TransactionsPage />} />
+                  <Route path="/accounts" element={<AccountsPage />} />
+                  <Route path="/users" element={<UsersPage />} />
+                </Route>
+                <Route path="/ledger-create" element={<LedgerCreatePage />} />
+                <Route path="/account-create" element={<AccountCreatePage />} />
               </Route>
-              <Route path="/ledger-create" element={<LedgerCreatePage />} />
-              <Route path="/account-create" element={<AccountCreatePage />} />
             </Route>
           </Routes>
         </BrowserRouter>
