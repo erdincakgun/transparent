@@ -12,6 +12,7 @@ import SummaryPage from "./pages/summary.tsx";
 import TransactionsPage from "./pages/transactions.tsx";
 import AccountsPage from "./pages/accounts.tsx";
 import UsersPage from "./pages/users.tsx";
+import AccountCreatePage from "./pages/account-create.tsx";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
@@ -28,6 +29,7 @@ createRoot(document.getElementById("root")!).render(
                 <Route path="/users" element={<UsersPage />} />
               </Route>
               <Route path="/ledger-create" element={<LedgerCreatePage />} />
+              <Route path="/account-create" element={<AccountCreatePage />} />
             </Route>
           </Routes>
         </BrowserRouter>
