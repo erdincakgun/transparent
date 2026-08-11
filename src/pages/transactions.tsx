@@ -20,7 +20,11 @@ const amountFormat = new Intl.NumberFormat(undefined, {
   maximumFractionDigits: 4,
 });
 
-const dateFormat = new Intl.DateTimeFormat(undefined, { dateStyle: "medium" });
+const dateFormat = new Intl.DateTimeFormat(undefined, {
+  dateStyle: "medium",
+  timeStyle: "medium",
+  hourCycle: "h23",
+});
 
 export default function TransactionsPage() {
   const { activeLedger, loading: ledgerLoading } = useLedger();
