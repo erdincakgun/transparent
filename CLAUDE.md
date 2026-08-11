@@ -80,8 +80,8 @@ cannot pass the SELECT policy — so the established pattern is: generate the id
 hold (`src/components/ledger-create-form.tsx`). Inserts into `accounts` and
 `transactions` have no such problem; membership already exists there.
 
-**Balances are a view, never a stored column.** `public.account_balance`
-(`20260811000000_account_balances.sql`) exposes `id, ledger_id, balance` as
+**Balances are a view, never a stored column.** `public.account_balances`
+(`20260811000000_account_balancess.sql`) exposes `id, ledger_id, balance` as
 *credits in minus debits out* (`sum` where `to_account_id` = account, minus `sum` where
 `from_account_id` = account). It is `security_invoker = true`, so the caller's RLS on
 `transactions` applies and no policy of its own is needed — but it still needs the
