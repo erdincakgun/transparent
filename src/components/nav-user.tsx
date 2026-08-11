@@ -11,8 +11,9 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import supabase from "@/lib/supabase/client";
-import { Copy, LogOutIcon, MoreHorizontalIcon } from "lucide-react";
+import { Copy, CopyCheck, LogOutIcon, MoreHorizontalIcon } from "lucide-react";
 import { useNavigate } from "react-router";
+import { useState } from "react";
 
 export function NavUser({
   user,
@@ -24,11 +25,13 @@ export function NavUser({
 }) {
   const { isMobile } = useSidebar();
   const navigate = useNavigate();
+  const [copied, setCopied] = useState(false);
 
   const copyUserId = () => {
     if (!user.id) return;
 
     navigator.clipboard.writeText(user.id);
+    setCopied(true);
   };
 
   const signOut = () => {
@@ -39,7 +42,11 @@ export function NavUser({
   return (
     <SidebarMenu>
       <SidebarMenuItem>
-        <DropdownMenu>
+        <DropdownMenu
+          onOpenChange={(open: boolean) => {
+            if (!open) setCopied(false);
+          }}
+        >
           <DropdownMenuTrigger
             render={
               <SidebarMenuButton
@@ -59,8 +66,12 @@ export function NavUser({
             align="end"
             sideOffset={4}
           >
-            <DropdownMenuItem onClick={copyUserId} disabled={!user.id}>
-              <Copy />
+            <DropdownMenuItem
+              onClick={copyUserId}
+              disabled={!user.id}
+              closeOnClick={false}
+            >
+              {copied ? <CopyCheck /> : <Copy />}
               Copy user ID
             </DropdownMenuItem>
             <DropdownMenuItem onClick={signOut}>
