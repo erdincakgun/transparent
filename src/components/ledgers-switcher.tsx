@@ -18,6 +18,8 @@ import { ChevronsUpDownIcon, PlusIcon } from "lucide-react";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
 
+export const ACTIVE_LEDGER_STORAGE_KEY = "transparent:active-ledger-id";
+
 export function LedgerSwitcher() {
   const { isMobile } = useSidebar();
   const navigate = useNavigate();
@@ -30,8 +32,6 @@ export function LedgerSwitcher() {
     id: string;
     name: string;
   }>();
-
-  const ACTIVE_LEDGER_STORAGE_KEY = "transparent:active-ledger-id";
 
   useEffect(() => {
     const load = async () => {
