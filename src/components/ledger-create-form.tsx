@@ -21,11 +21,14 @@ export function LedgerCreateForm({
     const form = e.target;
     const formData = new FormData(form);
     const name = formData.get("name")?.toString() ?? "";
+    const description = formData.get("description")?.toString().trim();
 
     setSubmitted(true);
 
     const id = crypto.randomUUID();
-    const { error } = await supabase.from("ledgers").insert({ id, name });
+    const { error } = await supabase
+      .from("ledgers")
+      .insert({ id, name, description: description || null });
 
     if (error) {
       setSubmitted(false);
@@ -49,6 +52,15 @@ export function LedgerCreateForm({
               placeholder="Enter a ledger name"
               maxLength={100}
               required
+            />
+          </Field>
+          <Field>
+            <Input
+              id="description"
+              name="description"
+              type="text"
+              placeholder="Enter a description (optional)"
+              maxLength={1000}
             />
           </Field>
           <Field>
