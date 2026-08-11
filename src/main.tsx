@@ -15,6 +15,7 @@ import UsersPage from "./pages/users.tsx";
 import AccountCreatePage from "./pages/account-create.tsx";
 import TransactionCreatePage from "./pages/transaction-create.tsx";
 import UserAddPage from "./pages/user-add.tsx";
+import UserDeletePage from "./pages/user-delete.tsx";
 import { LedgerProvider } from "./components/ledger-provider.tsx";
 
 createRoot(document.getElementById("root")!).render(
@@ -45,6 +46,10 @@ createRoot(document.getElementById("root")!).render(
                   element={<TransactionCreatePage />}
                 />
                 <Route path="/user-add" element={<UserAddPage />} />
+                <Route
+                  path="/users/delete/:userId"
+                  element={<UserDeletePage />}
+                />
               </Route>
             </Route>
           </Routes>
