@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/select";
 import { useEffect, useState } from "react";
 import supabase from "@/lib/supabase/client";
-import { Link, useNavigate } from "react-router";
+import { Link, useNavigate, useSearchParams } from "react-router";
 import { useLedger } from "@/components/ledger-provider";
 
 type Account = { id: string; name: string };
@@ -21,6 +21,7 @@ export function TransactionCreateForm({
   ...props
 }: React.ComponentProps<"div">) {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const { ledgers, activeLedger, selectLedger, loading } = useLedger();
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [accountsLoading, setAccountsLoading] = useState(true);
@@ -30,6 +31,10 @@ export function TransactionCreateForm({
   const [error, setError] = useState<string>();
 
   const ledgerId = activeLedger?.id;
+  const prefillFrom = searchParams.get("from");
+  const prefillTo = searchParams.get("to");
+  const prefillAmount = searchParams.get("amount") ?? "";
+  const prefillDescription = searchParams.get("description") ?? "";
 
   useEffect(() => {
     if (loading) return;
@@ -53,9 +58,13 @@ export function TransactionCreateForm({
 
       if (cancelled) return;
 
-      setAccounts(data ?? []);
-      setFromAccountId(null);
-      setToAccountId(null);
+      const loaded = data ?? [];
+      const inLedger = (id: string | null) =>
+        id && loaded.some((account) => account.id === id) ? id : null;
+
+      setAccounts(loaded);
+      setFromAccountId(inLedger(prefillFrom));
+      setToAccountId(inLedger(prefillTo));
       setAccountsLoading(false);
     };
 
@@ -64,7 +73,7 @@ export function TransactionCreateForm({
     return () => {
       cancelled = true;
     };
-  }, [loading, ledgerId]);
+  }, [loading, ledgerId, prefillFrom, prefillTo]);
 
   async function handleSubmit(e: { preventDefault: () => void; target: any }) {
     e.preventDefault();
@@ -215,7 +224,9 @@ export function TransactionCreateForm({
               <Field>
                 <Select
                   value={toAccountId}
-                  onValueChange={(value: string | null) => setToAccountId(value)}
+                  onValueChange={(value: string | null) =>
+                    setToAccountId(value)
+                  }
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue>
@@ -240,8 +251,9 @@ export function TransactionCreateForm({
                   name="amount"
                   type="number"
                   inputMode="decimal"
-                  step="0.10"
+                  step="0.0001"
                   placeholder="Enter an amount"
+                  defaultValue={prefillAmount}
                   required
                 />
               </Field>
@@ -252,6 +264,7 @@ export function TransactionCreateForm({
                   type="text"
                   placeholder="Enter a description"
                   maxLength={1000}
+                  defaultValue={prefillDescription}
                   required
                 />
               </Field>
