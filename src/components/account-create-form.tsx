@@ -34,13 +34,14 @@ export function AccountCreateForm({
     const form = e.target;
     const formData = new FormData(form);
     const name = formData.get("name")?.toString() ?? "";
+    const description = formData.get("description")?.toString().trim();
 
     setSubmitted(true);
     setError(undefined);
 
     const { error } = await supabase
       .from("accounts")
-      .insert({ ledger_id: ledgerId, name });
+      .insert({ ledger_id: ledgerId, name, description: description || null });
 
     if (error) {
       setSubmitted(false);
@@ -129,6 +130,15 @@ export function AccountCreateForm({
               placeholder="Enter an account name"
               maxLength={200}
               required
+            />
+          </Field>
+          <Field>
+            <Input
+              id="description"
+              name="description"
+              type="text"
+              placeholder="Enter a description (optional)"
+              maxLength={1000}
             />
           </Field>
           {error ? (
