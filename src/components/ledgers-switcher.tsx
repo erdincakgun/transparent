@@ -56,7 +56,12 @@ export function LedgerSwitcher() {
                   onClick={() => selectLedger(ledger.id)}
                   className="gap-2 p-2"
                 >
-                  {ledger.name}
+                  <div className="grid flex-1 text-left leading-tight">
+                    <span className="truncate font-medium">{ledger.name}</span>
+                    <span className="truncate text-xs text-muted-foreground">
+                      {ledger.id}
+                    </span>
+                  </div>
                 </DropdownMenuItem>
               ))}
             </DropdownMenuGroup>
