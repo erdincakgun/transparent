@@ -153,9 +153,6 @@ all logic.
   `TS5102` at `tsconfig.app.json:26`, and the same line sits in `tsconfig.json:9`.
   Deleting both is verified sufficient — `paths` resolves relative to the tsconfig
   itself. `yarn lint` passes (three fast-refresh warnings only).
-- `summary` and `users` pages are still one-line placeholders. `users` is the interesting
-  one: it needs the invite-by-user-id flow described above, plus `delete` on
-  `ledgers_users`.
 - No generated Supabase types — `supabase.from(...)` is untyped and every row shape is
   hand-declared at the top of the file that reads it. `supabase gen types` would fix this.
 - `README.md` is still the stock Vite template.
