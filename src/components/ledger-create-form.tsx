@@ -12,7 +12,7 @@ export function LedgerCreateForm({
   ...props
 }: React.ComponentProps<"div">) {
   const navigate = useNavigate();
-  const { refreshLedgers, selectLedger } = useLedger();
+  const { ledgers, refreshLedgers, selectLedger } = useLedger();
   const [submitted, setSubmitted] = useState(false);
 
   async function handleSubmit(e: { preventDefault: () => void; target: any }) {
@@ -56,6 +56,18 @@ export function LedgerCreateForm({
               Create ledger
             </Button>
           </Field>
+          {ledgers.length ? (
+            <Field>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={submitted}
+                onClick={() => navigate(-1)}
+              >
+                Cancel
+              </Button>
+            </Field>
+          ) : null}
         </FieldGroup>
       </form>
     </div>
