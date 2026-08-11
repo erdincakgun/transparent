@@ -37,7 +37,7 @@ export function NavUser({
             render={
               <SidebarMenuButton
                 size="lg"
-                className="aria-expanded:bg-muted group-data-[collapsible=icon]:p-2!"
+                className="aria-expanded:bg-muted group-data-[collapsible=icon]:p-2! cursor-pointer"
               />
             }
           >
