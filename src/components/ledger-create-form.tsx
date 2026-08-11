@@ -5,12 +5,14 @@ import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import supabase from "@/lib/supabase/client";
 import { useNavigate } from "react-router";
+import { useLedger } from "@/components/ledger-provider";
 
 export function LedgerCreateForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
   const navigate = useNavigate();
+  const { refreshLedgers, selectLedger } = useLedger();
   const [submitted, setSubmitted] = useState(false);
 
   async function handleSubmit(e: { preventDefault: () => void; target: any }) {
@@ -24,7 +26,15 @@ export function LedgerCreateForm({
 
     const id = crypto.randomUUID();
     const { error } = await supabase.from("ledgers").insert({ id, name });
-    if (!error) navigate(`/ledgers/${id}`, { replace: true });
+
+    if (error) {
+      setSubmitted(false);
+      return;
+    }
+
+    await refreshLedgers();
+    selectLedger(id);
+    navigate("/", { replace: true });
   }
 
   return (
