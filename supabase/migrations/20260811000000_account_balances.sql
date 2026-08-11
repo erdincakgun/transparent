@@ -1,4 +1,4 @@
-create view public.account_balances
+create view public.account_balance
 with (security_invoker = true) as
 select
   a.id,
@@ -21,6 +21,6 @@ select
   ) as balance
 from public.accounts a;
 
-revoke all on public.account_balances from anon, authenticated, service_role;
+revoke all on public.account_balance from anon, authenticated, service_role;
 
-grant select on public.account_balances to authenticated;
+grant select on public.account_balance to authenticated;
