@@ -11,18 +11,25 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import supabase from "@/lib/supabase/client";
-import { LogOutIcon, MoreHorizontalIcon } from "lucide-react";
+import { Copy, LogOutIcon, MoreHorizontalIcon } from "lucide-react";
 import { useNavigate } from "react-router";
 
 export function NavUser({
   user,
 }: {
   user: {
+    id: string | undefined;
     email: string | undefined;
   };
 }) {
   const { isMobile } = useSidebar();
   const navigate = useNavigate();
+
+  const copyUserId = () => {
+    if (!user.id) return;
+
+    navigator.clipboard.writeText(user.id);
+  };
 
   const signOut = () => {
     supabase.auth.signOut();
@@ -52,6 +59,10 @@ export function NavUser({
             align="end"
             sideOffset={4}
           >
+            <DropdownMenuItem onClick={copyUserId} disabled={!user.id}>
+              <Copy />
+              Copy user ID
+            </DropdownMenuItem>
             <DropdownMenuItem onClick={signOut}>
               <LogOutIcon />
               Log out
