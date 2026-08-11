@@ -9,7 +9,7 @@ import {
   SidebarHeader,
   SidebarRail,
 } from "@/components/ui/sidebar";
-import { ArrowRightLeft, ReceiptText, Users } from "lucide-react";
+import { ArrowRightLeft, ReceiptText, Summary, Users } from "lucide-react";
 import supabase from "@/lib/supabase/client";
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router";
@@ -17,18 +17,23 @@ import { useNavigate } from "react-router";
 const data = {
   navItems: [
     {
+      name: "Summary",
+      url: "/summary",
+      icon: <Summary />,
+    },
+    {
       name: "Transactions",
-      url: "#",
+      url: "/transactions",
       icon: <ArrowRightLeft />,
     },
     {
       name: "Accounts",
-      url: "#",
+      url: "/accounts",
       icon: <ReceiptText />,
     },
     {
       name: "Users",
-      url: "#",
+      url: "/users",
       icon: <Users />,
     },
   ],
