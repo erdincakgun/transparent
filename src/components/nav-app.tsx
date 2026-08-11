@@ -5,6 +5,8 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 
+import { Link } from "react-router";
+
 export function NavItems({
   navItems: projects,
 }: {
@@ -19,7 +21,10 @@ export function NavItems({
       <SidebarMenu>
         {projects.map((item) => (
           <SidebarMenuItem key={item.name}>
-            <SidebarMenuButton tooltip={item.name} render={<a href={item.url} />}>
+            <SidebarMenuButton
+              tooltip={item.name}
+              render={<Link to={item.url} />}
+            >
               {item.icon}
               <span>{item.name}</span>
             </SidebarMenuButton>
