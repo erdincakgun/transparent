@@ -14,7 +14,7 @@ import {
 import { Outlet, useLocation } from "react-router";
 
 const pageNames: Record<string, string> = {
-  "/": "Summary",
+  "/": "Settle Up",
   "/transactions": "Transactions",
   "/accounts": "Accounts",
   "/users": "Users",
