@@ -2,6 +2,7 @@ import * as React from "react";
 import { NavItems } from "@/components/nav-app";
 import { NavUser } from "@/components/nav-user";
 import { LedgerSwitcher } from "@/components/ledgers-switcher";
+import { useLedger } from "@/components/ledger-provider";
 import {
   Sidebar,
   SidebarContent,
@@ -41,22 +42,22 @@ const data = {
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const navigate = useNavigate();
+  const { ledgers, loading } = useLedger();
   const [email, setEmail] = useState<string | undefined>();
 
   useEffect(() => {
     const load = async () => {
       const { data: userData } = await supabase.auth.getUser();
       setEmail(userData.user?.email);
-
-      const { data: ledgerData } = await supabase.from("ledgers").select("id");
-
-      if (!ledgerData?.length) {
-        navigate("/ledger-create", { replace: true });
-        return;
-      }
     };
     load();
-  }, [navigate]);
+  }, []);
+
+  useEffect(() => {
+    if (loading || ledgers.length) return;
+
+    navigate("/ledger-create", { replace: true });
+  }, [loading, ledgers, navigate]);
 
   return (
     <Sidebar collapsible="icon" {...props}>
