@@ -4,6 +4,7 @@ import { ArrowRightIcon, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLedger } from "@/components/ledger-provider";
+import { trimAmount } from "@/lib/utils";
 import supabase from "@/lib/supabase/client";
 
 type SettlementTransfer = {
@@ -16,16 +17,6 @@ const amountFormat = new Intl.NumberFormat(undefined, {
   minimumFractionDigits: 2,
   maximumFractionDigits: 4,
 });
-
-const trimAmount = (amount: string) => {
-  const [whole, fraction = ""] = amount.split(".");
-  const digits = fraction.replace(/0+$/, "");
-
-  return digits ? `${whole}.${digits}` : whole;
-};
-
-const settleDescription = (from: string, to: string) =>
-  `${from} -> ${to} to settle up`;
 
 export default function SummaryPage() {
   const { activeLedger, loading: ledgerLoading } = useLedger();
@@ -132,7 +123,7 @@ export default function SummaryPage() {
                             from: transfer.from_account_id,
                             to: transfer.to_account_id,
                             amount: trimAmount(transfer.amount),
-                            description: settleDescription(fromName, toName),
+                            description: `settle up from the suggestions`,
                           }).toString(),
                         }}
                       />
