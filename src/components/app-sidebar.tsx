@@ -44,11 +44,13 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const navigate = useNavigate();
   const { ledgers, loading } = useLedger();
   const [email, setEmail] = useState<string | undefined>();
+  const [userId, setUserId] = useState<string | undefined>();
 
   useEffect(() => {
     const load = async () => {
       const { data: userData } = await supabase.auth.getUser();
       setEmail(userData.user?.email);
+      setUserId(userData.user?.id);
     };
     load();
   }, []);
@@ -70,6 +72,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       <SidebarFooter>
         <NavUser
           user={{
+            id: userId,
             email: email,
           }}
         />
