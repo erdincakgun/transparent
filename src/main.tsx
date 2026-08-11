@@ -22,7 +22,7 @@ createRoot(document.getElementById("root")!).render(
             <Route path="/login" element={<LoginPage />} />
             <Route element={<RequireAuth />}>
               <Route element={<Dashboard />}>
-                <Route path="/summary" element={<SummaryPage />} />
+                <Route path="/" element={<SummaryPage />} />
                 <Route path="/transactions" element={<TransactionsPage />} />
                 <Route path="/accounts" element={<AccountsPage />} />
                 <Route path="/users" element={<UsersPage />} />
