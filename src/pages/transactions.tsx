@@ -1,6 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
-import { ArrowRightIcon, DownloadIcon, PlusIcon, Undo2 } from "lucide-react";
+import {
+  ArrowRightIcon,
+  CopyPlusIcon,
+  DownloadIcon,
+  PlusIcon,
+  Undo2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLedger } from "@/components/ledger-provider";
@@ -187,6 +193,28 @@ export default function TransactionsPage() {
                 <Button
                   variant="outline"
                   size="sm"
+                  aria-label="Duplicate transaction"
+                  nativeButton={false}
+                  render={
+                    <Link
+                      to={{
+                        pathname: "/transaction-create",
+                        search: new URLSearchParams({
+                          from: transaction.from_account_id,
+                          to: transaction.to_account_id,
+                          amount: trimAmount(transaction.amount),
+                          description: transaction.description,
+                        }).toString(),
+                      }}
+                    />
+                  }
+                >
+                  <CopyPlusIcon />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  aria-label="Revert transaction"
                   nativeButton={false}
                   render={
                     <Link
