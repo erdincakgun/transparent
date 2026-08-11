@@ -1,5 +1,7 @@
 import { useEffect, useState } from "react";
-import { ArrowRightIcon } from "lucide-react";
+import { Link } from "react-router";
+import { ArrowRightIcon, Play } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLedger } from "@/components/ledger-provider";
 import supabase from "@/lib/supabase/client";
@@ -14,6 +16,16 @@ const amountFormat = new Intl.NumberFormat(undefined, {
   minimumFractionDigits: 2,
   maximumFractionDigits: 4,
 });
+
+const trimAmount = (amount: string) => {
+  const [whole, fraction = ""] = amount.split(".");
+  const digits = fraction.replace(/0+$/, "");
+
+  return digits ? `${whole}.${digits}` : whole;
+};
+
+const settleDescription = (from: string, to: string) =>
+  `${from} -> ${to} to settle up`;
 
 export default function SummaryPage() {
   const { activeLedger, loading: ledgerLoading } = useLedger();
@@ -90,25 +102,48 @@ export default function SummaryPage() {
         </div>
       ) : transfers.length ? (
         <div className="divide-y rounded-lg border">
-          {transfers.map((transfer) => (
-            <div
-              key={`${transfer.from_account_id}-${transfer.to_account_id}`}
-              className="flex items-center justify-between gap-4 px-4 py-3"
-            >
-              <div className="flex min-w-0 items-center gap-1.5 text-sm font-medium">
-                <span className="truncate">
-                  {accountNames[transfer.from_account_id]}
-                </span>
-                <ArrowRightIcon className="size-3.5 shrink-0 text-muted-foreground" />
-                <span className="truncate">
-                  {accountNames[transfer.to_account_id]}
-                </span>
+          {transfers.map((transfer) => {
+            const fromName = accountNames[transfer.from_account_id] ?? "";
+            const toName = accountNames[transfer.to_account_id] ?? "";
+
+            return (
+              <div
+                key={`${transfer.from_account_id}-${transfer.to_account_id}`}
+                className="flex items-center justify-between gap-4 px-4 py-3"
+              >
+                <div className="flex min-w-0 items-center gap-1.5 text-sm font-medium">
+                  <span className="truncate">{fromName}</span>
+                  <ArrowRightIcon className="size-3.5 shrink-0 text-muted-foreground" />
+                  <span className="truncate">{toName}</span>
+                </div>
+                <div className="flex shrink-0 items-center gap-3">
+                  <span className="text-sm font-medium tabular-nums">
+                    {amountFormat.format(Number(transfer.amount))}
+                  </span>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    nativeButton={false}
+                    render={
+                      <Link
+                        to={{
+                          pathname: "/transaction-create",
+                          search: new URLSearchParams({
+                            from: transfer.from_account_id,
+                            to: transfer.to_account_id,
+                            amount: trimAmount(transfer.amount),
+                            description: settleDescription(fromName, toName),
+                          }).toString(),
+                        }}
+                      />
+                    }
+                  >
+                    <Play />
+                  </Button>
+                </div>
               </div>
-              <span className="shrink-0 text-sm font-medium tabular-nums">
-                {amountFormat.format(Number(transfer.amount))}
-              </span>
-            </div>
-          ))}
+            );
+          })}
         </div>
       ) : (
         <div className="rounded-lg border p-8 text-center text-sm text-muted-foreground">
