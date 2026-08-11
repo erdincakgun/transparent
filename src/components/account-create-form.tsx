@@ -103,20 +103,40 @@ export function AccountCreateForm({
         <FieldGroup>
           <Field>
             <Select
-              items={ledgers.map((ledger) => ({
-                value: ledger.id,
-                label: ledger.name,
-              }))}
               value={ledgerId}
               onValueChange={(value: string | null) => setLedgerId(value)}
             >
-              <SelectTrigger className="w-full">
-                <SelectValue placeholder="Select a ledger" />
+              <SelectTrigger className="w-full data-[size=default]:h-auto">
+                <SelectValue className="line-clamp-none">
+                  {(value: string | null) => {
+                    const ledger = ledgers.find((item) => item.id === value);
+
+                    if (!ledger) return "Select a ledger";
+
+                    return (
+                      <div className="grid flex-1 text-left leading-tight">
+                        <span className="truncate font-medium">
+                          {ledger.name}
+                        </span>
+                        <span className="truncate text-xs text-muted-foreground">
+                          {ledger.id}
+                        </span>
+                      </div>
+                    );
+                  }}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {ledgers.map((ledger) => (
                   <SelectItem key={ledger.id} value={ledger.id}>
-                    {ledger.name}
+                    <div className="grid flex-1 text-left leading-tight">
+                      <span className="truncate font-medium">
+                        {ledger.name}
+                      </span>
+                      <span className="truncate text-xs text-muted-foreground">
+                        {ledger.id}
+                      </span>
+                    </div>
                   </SelectItem>
                 ))}
               </SelectContent>
