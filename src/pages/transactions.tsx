@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
-import { ArrowRightIcon, PlusIcon, Undo2 } from "lucide-react";
+import { ArrowRightIcon, DownloadIcon, PlusIcon, Undo2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLedger } from "@/components/ledger-provider";
+import { downloadCsv } from "@/lib/csv";
 import { trimAmount } from "@/lib/utils";
 import supabase from "@/lib/supabase/client";
 
@@ -27,14 +28,46 @@ const dateFormat = new Intl.DateTimeFormat(undefined, {
   hourCycle: "h23",
 });
 
+const exportColumns = [
+  "id",
+  "created_at",
+  "ledger_id",
+  "from_account_id",
+  "to_account_id",
+  "amount::text",
+  "description",
+];
+
 export default function TransactionsPage() {
   const { activeLedger, loading: ledgerLoading } = useLedger();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [accountNames, setAccountNames] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
+  const [exporting, setExporting] = useState(false);
   const [error, setError] = useState<string>();
 
   const ledgerId = activeLedger?.id;
+
+  async function handleExport() {
+    if (!ledgerId) return;
+
+    setExporting(true);
+
+    const { data, error } = await supabase
+      .from("transactions")
+      .select(exportColumns.join(", "))
+      .eq("ledger_id", ledgerId)
+      .order("created_at", { ascending: false });
+
+    setExporting(false);
+
+    if (error) {
+      setError(error.message);
+      return;
+    }
+
+    downloadCsv(`transactions-${ledgerId}.csv`, exportColumns, data ?? []);
+  }
 
   useEffect(() => {
     if (ledgerLoading) return;
@@ -92,10 +125,23 @@ export default function TransactionsPage() {
             ? "Loading transactions"
             : `${transactions.length} ${transactions.length === 1 ? "transaction" : "transactions"}`}
         </p>
-        <Button nativeButton={false} render={<Link to="/transaction-create" />}>
-          <PlusIcon />
-          Add transaction
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            disabled={exporting || !ledgerId}
+            onClick={handleExport}
+          >
+            <DownloadIcon />
+            Export CSV
+          </Button>
+          <Button
+            nativeButton={false}
+            render={<Link to="/transaction-create" />}
+          >
+            <PlusIcon />
+            Add transaction
+          </Button>
+        </div>
       </div>
 
       {error ? (
