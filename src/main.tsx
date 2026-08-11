@@ -8,7 +8,7 @@ import { ThemeProvider } from "@/components/theme-provider";
 import LedgerCreatePage from "@/pages/ledger-create.tsx";
 import { RequireAuth } from "./components/require-auth.tsx";
 import Dashboard from "./layouts/dashboard.tsx";
-import SummaryPage from "./pages/summary.tsx";
+import SettleUpPage from "./pages/settle-up.tsx";
 import TransactionsPage from "./pages/transactions.tsx";
 import AccountsPage from "./pages/accounts.tsx";
 import UsersPage from "./pages/users.tsx";
@@ -34,7 +34,7 @@ createRoot(document.getElementById("root")!).render(
                 }
               >
                 <Route element={<Dashboard />}>
-                  <Route path="/" element={<SummaryPage />} />
+                  <Route path="/" element={<SettleUpPage />} />
                   <Route path="/transactions" element={<TransactionsPage />} />
                   <Route path="/accounts" element={<AccountsPage />} />
                   <Route path="/users" element={<UsersPage />} />
