@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { LogOutIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Field, FieldGroup } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -14,6 +15,11 @@ export function LedgerCreateForm({
   const navigate = useNavigate();
   const { ledgers, refreshLedgers, selectLedger } = useLedger();
   const [submitted, setSubmitted] = useState(false);
+
+  const signOut = () => {
+    supabase.auth.signOut();
+    navigate("/login", { replace: true });
+  };
 
   async function handleSubmit(e: { preventDefault: () => void; target: any }) {
     e.preventDefault();
@@ -79,7 +85,19 @@ export function LedgerCreateForm({
                 Cancel
               </Button>
             </Field>
-          ) : null}
+          ) : (
+            <Field>
+              <Button
+                type="button"
+                variant="outline"
+                disabled={submitted}
+                onClick={signOut}
+              >
+                <LogOutIcon />
+                Log out
+              </Button>
+            </Field>
+          )}
         </FieldGroup>
       </form>
     </div>
