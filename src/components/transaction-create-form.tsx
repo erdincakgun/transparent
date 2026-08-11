@@ -270,6 +270,16 @@ export function TransactionCreateForm({
               </Field>
             </>
           )}
+          <Field>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={submitted}
+              onClick={() => navigate(-1)}
+            >
+              Cancel
+            </Button>
+          </Field>
         </FieldGroup>
       </form>
     </div>
