@@ -56,7 +56,8 @@ export function NavUser({
             }
           >
             <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
-              <span className="truncate text-xs">{user.email}</span>
+              <span className="truncate font-medium">{user.email}</span>
+              <span className="truncate text-xs">{user.id}</span>
             </div>
             <MoreHorizontalIcon className="ml-auto size-4" />
           </DropdownMenuTrigger>
