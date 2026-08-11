@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
-import { PlusIcon } from "lucide-react";
+import { PlusIcon, Trash2Icon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLedger } from "@/components/ledger-provider";
@@ -90,11 +90,20 @@ export default function UsersPage() {
               <span className="truncate text-sm font-medium">
                 {user.user_id}
               </span>
-              {user.user_id === currentUserId ? (
-                <span className="shrink-0 text-sm text-muted-foreground">
-                  You
-                </span>
-              ) : null}
+              <div className="flex shrink-0 items-center gap-3">
+                {user.user_id === currentUserId ? (
+                  <span className="text-sm text-muted-foreground">You</span>
+                ) : null}
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  nativeButton={false}
+                  render={<Link to={`/users/delete/${user.user_id}`} />}
+                >
+                  <Trash2Icon />
+                  Delete
+                </Button>
+              </div>
             </div>
           ))}
         </div>
