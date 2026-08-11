@@ -47,7 +47,7 @@ export default function AccountsPage() {
           .eq("ledger_id", ledgerId)
           .order("name"),
         supabase
-          .from("account_balance")
+          .from("account_balances")
           .select("id, balance::text")
           .eq("ledger_id", ledgerId),
       ]);
