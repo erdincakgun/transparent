@@ -9,45 +9,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import supabase from "@/lib/supabase/client";
 import { Link, useNavigate } from "react-router";
-import { ACTIVE_LEDGER_STORAGE_KEY } from "@/components/ledgers-switcher";
-
-type Ledger = { id: string; name: string };
+import { useLedger } from "@/components/ledger-provider";
 
 export function AccountCreateForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
   const navigate = useNavigate();
-  const [ledgers, setLedgers] = useState<Ledger[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [ledgerId, setLedgerId] = useState<string | null>(null);
+  const { ledgers, activeLedger, loading } = useLedger();
+  const [selectedLedgerId, setSelectedLedgerId] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string>();
 
-  useEffect(() => {
-    const load = async () => {
-      const { data } = await supabase
-        .from("ledgers")
-        .select("id, name")
-        .order("name");
-
-      const ledgerData = data ?? [];
-      setLedgers(ledgerData);
-
-      const storedId = localStorage.getItem(ACTIVE_LEDGER_STORAGE_KEY);
-
-      setLedgerId(
-        (ledgerData.find((ledger) => ledger.id === storedId) ?? ledgerData[0])
-          ?.id ?? null,
-      );
-
-      setLoading(false);
-    };
-    load();
-  }, []);
+  const ledgerId = selectedLedgerId ?? activeLedger?.id ?? null;
 
   async function handleSubmit(e: { preventDefault: () => void; target: any }) {
     e.preventDefault();
@@ -104,7 +81,9 @@ export function AccountCreateForm({
           <Field>
             <Select
               value={ledgerId}
-              onValueChange={(value: string | null) => setLedgerId(value)}
+              onValueChange={(value: string | null) =>
+                setSelectedLedgerId(value)
+              }
             >
               <SelectTrigger className="w-full data-[size=default]:h-auto">
                 <SelectValue className="line-clamp-none">
