@@ -3,10 +3,7 @@ import { ModeToggle } from "@/components/mode-toggle";
 import {
   Breadcrumb,
   BreadcrumbItem,
-  BreadcrumbLink,
   BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -14,9 +11,18 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { Outlet } from "react-router";
+import { Outlet, useLocation } from "react-router";
+
+const pageNames: Record<string, string> = {
+  "/": "Summary",
+  "/transactions": "Transactions",
+  "/accounts": "Accounts",
+  "/users": "Users",
+};
 
 export default function Dashboard() {
+  const { pathname } = useLocation();
+
   return (
     <SidebarProvider>
       <AppSidebar />
@@ -31,13 +37,7 @@ export default function Dashboard() {
             <Breadcrumb>
               <BreadcrumbList>
                 <BreadcrumbItem className="hidden md:block">
-                  <BreadcrumbLink href="#">
-                    Build Your Application
-                  </BreadcrumbLink>
-                </BreadcrumbItem>
-                <BreadcrumbSeparator className="hidden md:block" />
-                <BreadcrumbItem>
-                  <BreadcrumbPage>Data Fetching</BreadcrumbPage>
+                  {pageNames[pathname]}
                 </BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
