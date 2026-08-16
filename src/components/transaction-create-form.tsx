@@ -51,7 +51,7 @@ export function TransactionCreateForm({
       setAccountsLoading(true);
 
       const { data } = await supabase
-        .from("accounts")
+        .from("active_accounts")
         .select("id, name")
         .eq("ledger_id", ledgerId)
         .order("name");
@@ -101,7 +101,9 @@ export function TransactionCreateForm({
       setError(
         error.message.includes("transactions_distinct_accounts")
           ? "Pick two different accounts."
-          : error.message,
+          : error.code === "23001"
+            ? "One of these accounts has been deleted."
+            : error.message,
       );
       return;
     }

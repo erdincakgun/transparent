@@ -1,0 +1,17 @@
+create view public.active_accounts
+with (security_invoker = true) as
+select
+  a.id,
+  a.ledger_id,
+  a.name,
+  a.description
+from public.accounts a
+where not exists (
+  select 1
+  from public.deleted_accounts d
+  where d.account_id = a.id
+);
+
+revoke all on public.active_accounts from anon, authenticated, service_role;
+
+grant select on public.active_accounts to authenticated;

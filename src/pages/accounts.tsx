@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
-import { DownloadIcon, PlusIcon } from "lucide-react";
+import { DownloadIcon, PlusIcon, Trash2Icon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLedger } from "@/components/ledger-provider";
@@ -34,7 +34,7 @@ export default function AccountsPage() {
     setExporting(true);
 
     const { data, error } = await supabase
-      .from("accounts")
+      .from("active_accounts")
       .select(exportColumns.join(", "))
       .eq("ledger_id", ledgerId)
       .order("name");
@@ -67,7 +67,7 @@ export default function AccountsPage() {
 
       const [accountResult, balanceResult] = await Promise.all([
         supabase
-          .from("accounts")
+          .from("active_accounts")
           .select("id, name, description")
           .eq("ledger_id", ledgerId)
           .order("name"),
@@ -150,9 +150,20 @@ export default function AccountsPage() {
                   </span>
                 ) : null}
               </div>
-              <span className="shrink-0 text-sm font-medium tabular-nums">
-                {balanceFormat.format(Number(balances[account.id] ?? 0))}
-              </span>
+              <div className="flex shrink-0 items-center gap-3">
+                <span className="text-sm font-medium tabular-nums">
+                  {balanceFormat.format(Number(balances[account.id] ?? 0))}
+                </span>
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  aria-label="Delete account"
+                  nativeButton={false}
+                  render={<Link to={`/accounts/delete/${account.id}`} />}
+                >
+                  <Trash2Icon />
+                </Button>
+              </div>
             </div>
           ))}
         </div>
