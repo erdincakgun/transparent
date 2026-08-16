@@ -20,13 +20,36 @@ yarn dev        # vite dev server on :5173
 yarn build      # tsc -b && vite build
 yarn lint       # oxlint
 yarn knip       # unused files/exports/deps
+yarn test       # pgTAP suite against the local database
 npx supabase start / db reset / status   # CLI is not installed globally
 ```
 
-There is no test framework and no test files — don't go looking for them. Verification is
-`yarn lint`, `tsc -b`, and driving the app (Playwright MCP is available; its scratch
-output lands in the gitignored `.playwright-mcp/`). A postgres MCP server is also wired
-up for querying the local database directly.
+**The tests are SQL, because the rules being tested are SQL.** `supabase/tests/database/`
+holds pgTAP suites run by `yarn test` (`supabase test db`); there is no JS test framework
+and no component tests. Each file builds its own fixture inside a transaction and rolls
+back, so the suites are order-independent and do not read `seed.sql`. They assert the
+things that must never regress — anon and `service_role` reach nothing, `aal1` reads zero
+rows, a non-member reads zero rows through tables *and* views, append-only holds at both
+the grant layer and the trigger layer, and the settlement plan zeroes every balance.
+**Any change to a policy, grant or trigger must leave `yarn test` green**; if a change
+makes a test fail, the change is wrong until proven otherwise.
+
+Impersonation inside a test goes through the local `pg_temp.read_as` / `pg_temp.exec_as`
+helpers: they set `request.jwt.claims`, switch role, run the one statement under test, and
+switch back, returning either the value or `ERROR:<sqlstate>` so a refusal is an assertable
+outcome rather than an aborted run. pgTAP assertions themselves stay as `postgres` —
+`authenticated` has no `execute` on functions in `public`, so asserting as that role would
+fail for the wrong reason.
+
+Beyond that, verification is `yarn lint`, `tsc -b`, and driving the app (Playwright MCP is
+available; its scratch output lands in the gitignored `.playwright-mcp/`). A postgres MCP
+server is also wired up for querying the local database directly.
+
+`supabase/seed.sql` gives `db reset` a working fixture: four users
+(`*@transparent.test`), two ledgers with overlapping membership, a retired account and an
+unsettled one. Every user gets a verified TOTP factor built from the shared dev secret
+`JBSWY3DPEHPK3PXP` — without a factor a seeded user cannot reach `aal2`, and without
+`aal2` they read nothing, which would make the fixture invisible in the app it seeds.
 
 Node is pinned to 24.18.0 (`.nvmrc`). Local Supabase: API `:54321`, DB `:54322`,
 Studio `:54323`, mail catcher `:54324`. Env vars live in `.env.local` (see `.env.example`);
@@ -270,8 +293,9 @@ viewport wrapping a `*-form` component that holds all logic.
 
 - No generated Supabase types — `supabase.from(...)` is untyped and every row shape is
   hand-declared at the top of the file that reads it. `supabase gen types` would fix this.
-- `supabase/config.toml` points `db.seed` at `./seed.sql`, which does not exist, so
-  `supabase db reset` leaves you with an empty database.
+- No CSV formula-injection guard, no row-attribution columns, no member role model, and
+  every list/export silently truncates at PostgREST's `max_rows = 1000`. These are tracked
+  as B1–B5 in the pre-production audit and are being worked through in order.
 - There is no MFA settings screen, and deliberately no way to turn MFA off. A user who
   loses their authenticator is locked out: recovery means deleting their factor with
   `auth.admin.mfa.deleteFactor`, which needs a service key, and this repo has none. Adding
