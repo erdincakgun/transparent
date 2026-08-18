@@ -1,17 +1,11 @@
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import {
-  Field,
-  FieldDescription,
-  FieldError,
-  FieldGroup,
-} from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
+import { Field, FieldError, FieldGroup } from "@/components/ui/field";
 import { useEffect, useRef, useState } from "react";
 import supabase from "@/lib/supabase/client";
 import { mfaErrorMessage, verifyMfaCode } from "@/lib/supabase/mfa";
 import { useNavigate } from "react-router";
-import { Copy, CopyCheck } from "lucide-react";
+import { MfaEnrollFields } from "@/components/mfa-enroll-fields";
 
 export function MfaEnrollForm({
   className,
@@ -24,7 +18,6 @@ export function MfaEnrollForm({
   const [secret, setSecret] = useState<string>();
   const [loading, setLoading] = useState(true);
   const [submitted, setSubmitted] = useState(false);
-  const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string>();
 
   useEffect(() => {
@@ -70,13 +63,6 @@ export function MfaEnrollForm({
     enroll();
   }, [navigate]);
 
-  const copySecret = () => {
-    if (!secret) return;
-
-    navigator.clipboard.writeText(secret);
-    setCopied(true);
-  };
-
   const signOut = async () => {
     await supabase.auth.signOut();
     navigate("/login", { replace: true });
@@ -116,61 +102,7 @@ export function MfaEnrollForm({
               Scan this with your authenticator app
             </p>
           </Field>
-          {qrCode ? (
-            <Field>
-              {/* Field stretches its direct children with `*:w-full`, which would
-                  squash a square QR into a rectangle — hence the wrapper. The SVG
-                  carries no background of its own, so the white one is what makes
-                  it scannable in the default dark theme. */}
-              <div className="flex justify-center">
-                <img
-                  src={qrCode}
-                  alt="Authenticator setup QR code"
-                  className="size-48 rounded-lg bg-white p-2"
-                />
-              </div>
-            </Field>
-          ) : null}
-          {secret ? (
-            <Field>
-              <div className="flex items-center gap-2">
-                <Input
-                  id="secret"
-                  name="secret"
-                  type="text"
-                  value={secret}
-                  className="font-mono text-xs"
-                  readOnly
-                />
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="icon"
-                  aria-label="Copy setup key"
-                  onClick={copySecret}
-                >
-                  {copied ? <CopyCheck /> : <Copy />}
-                </Button>
-              </div>
-              <FieldDescription>
-                Can't scan? Type this setup key into the app instead
-              </FieldDescription>
-            </Field>
-          ) : null}
-          <Field>
-            <Input
-              id="code"
-              name="code"
-              type="text"
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              maxLength={6}
-              placeholder="Enter the six digits from your app"
-              disabled={!factorId}
-              required
-              autoFocus
-            />
-          </Field>
+          <MfaEnrollFields qrCode={qrCode} secret={secret} factorId={factorId} />
           {error ? (
             <Field>
               <FieldError>{error}</FieldError>
