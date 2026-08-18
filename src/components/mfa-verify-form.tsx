@@ -4,7 +4,11 @@ import { Field, FieldError, FieldGroup } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { useEffect, useState } from "react";
 import supabase from "@/lib/supabase/client";
-import { mfaErrorMessage, verifyMfaCode } from "@/lib/supabase/mfa";
+import {
+  listVerifiedTotpFactors,
+  mfaErrorMessage,
+  verifyMfaCodeAnyFactor,
+} from "@/lib/supabase/mfa";
 import { useNavigate } from "react-router";
 
 export function MfaVerifyForm({
@@ -12,7 +16,7 @@ export function MfaVerifyForm({
   ...props
 }: React.ComponentProps<"div">) {
   const navigate = useNavigate();
-  const [factorId, setFactorId] = useState<string>();
+  const [factorIds, setFactorIds] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string>();
@@ -21,7 +25,7 @@ export function MfaVerifyForm({
     let cancelled = false;
 
     const load = async () => {
-      const { data, error } = await supabase.auth.mfa.listFactors();
+      const { factors, error } = await listVerifiedTotpFactors();
 
       if (cancelled) return;
 
@@ -31,14 +35,12 @@ export function MfaVerifyForm({
         return;
       }
 
-      const totp = data.totp[0];
-
-      if (!totp) {
+      if (!factors.length) {
         navigate("/mfa-enroll", { replace: true });
         return;
       }
 
-      setFactorId(totp.id);
+      setFactorIds(factors.map((factor) => factor.id));
       setLoading(false);
     };
 
@@ -57,7 +59,7 @@ export function MfaVerifyForm({
   async function handleSubmit(e: { preventDefault: () => void; target: any }) {
     e.preventDefault();
 
-    if (!factorId) return;
+    if (!factorIds.length) return;
 
     const form = e.target;
     const formData = new FormData(form);
@@ -66,7 +68,7 @@ export function MfaVerifyForm({
     setSubmitted(true);
     setError(undefined);
 
-    const error = await verifyMfaCode(factorId, code);
+    const error = await verifyMfaCodeAnyFactor(factorIds, code);
 
     if (error) {
       setSubmitted(false);
@@ -97,7 +99,7 @@ export function MfaVerifyForm({
               autoComplete="one-time-code"
               maxLength={6}
               placeholder="Enter the six digits from your app"
-              disabled={!factorId}
+              disabled={!factorIds.length}
               required
               autoFocus
             />
@@ -108,7 +110,7 @@ export function MfaVerifyForm({
             </Field>
           ) : null}
           <Field>
-            <Button type="submit" disabled={submitted || !factorId}>
+            <Button type="submit" disabled={submitted || !factorIds.length}>
               Continue
             </Button>
           </Field>
