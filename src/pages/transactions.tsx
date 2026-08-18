@@ -10,7 +10,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLedger } from "@/components/ledger-provider";
+import { Actor } from "@/components/actor";
 import { downloadCsv } from "@/lib/csv";
+import { fetchAllRows } from "@/lib/pagination";
 import { trimAmount } from "@/lib/utils";
 import supabase from "@/lib/supabase/client";
 
@@ -21,6 +23,7 @@ type Transaction = {
   to_account_id: string;
   amount: string;
   description: string;
+  created_by: string;
 };
 
 const amountFormat = new Intl.NumberFormat(undefined, {
@@ -42,12 +45,14 @@ const exportColumns = [
   "to_account_id",
   "amount::text",
   "description",
+  "created_by",
 ];
 
 export default function TransactionsPage() {
   const { activeLedger, loading: ledgerLoading } = useLedger();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [accountNames, setAccountNames] = useState<Record<string, string>>({});
+  const [currentUserId, setCurrentUserId] = useState<string>();
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState<string>();
@@ -59,20 +64,35 @@ export default function TransactionsPage() {
 
     setExporting(true);
 
-    const { data, error } = await supabase
-      .from("transactions")
-      .select(exportColumns.join(", "))
-      .eq("ledger_id", ledgerId)
-      .order("created_at", { ascending: false });
+    const [{ data, error }, { count, error: countError }] = await Promise.all([
+      fetchAllRows((from, to) =>
+        supabase
+          .from("transactions")
+          .select(exportColumns.join(", "))
+          .eq("ledger_id", ledgerId)
+          .order("created_at", { ascending: false })
+          .order("id", { ascending: true })
+          .range(from, to),
+      ),
+      supabase
+        .from("transactions")
+        .select("*", { count: "exact", head: true })
+        .eq("ledger_id", ledgerId),
+    ]);
 
     setExporting(false);
 
-    if (error) {
-      setError(error.message);
+    if (error ?? countError) {
+      setError((error ?? countError)?.message);
       return;
     }
 
-    downloadCsv(`transactions-${ledgerId}.csv`, exportColumns, data ?? []);
+    if (!data || data.length !== count) {
+      setError("Export incomplete — nothing was saved.");
+      return;
+    }
+
+    downloadCsv(`transactions-${ledgerId}.csv`, exportColumns, data);
   }
 
   useEffect(() => {
@@ -90,16 +110,29 @@ export default function TransactionsPage() {
       setLoading(true);
       setError(undefined);
 
-      const [transactionResult, accountResult] = await Promise.all([
-        supabase
-          .from("transactions")
-          .select(
-            "id, created_at, from_account_id, to_account_id, amount::text, description",
-          )
-          .eq("ledger_id", ledgerId)
-          .order("created_at", { ascending: false }),
-        supabase.from("accounts").select("id, name").eq("ledger_id", ledgerId),
-      ]);
+      const [transactionResult, accountResult, sessionResult] =
+        await Promise.all([
+          fetchAllRows<Transaction>((from, to) =>
+            supabase
+              .from("transactions")
+              .select(
+                "id, created_at, from_account_id, to_account_id, amount::text, description, created_by",
+              )
+              .eq("ledger_id", ledgerId)
+              .order("created_at", { ascending: false })
+              .order("id", { ascending: true })
+              .range(from, to),
+          ),
+          fetchAllRows<{ id: string; name: string }>((from, to) =>
+            supabase
+              .from("accounts")
+              .select("id, name")
+              .eq("ledger_id", ledgerId)
+              .order("id", { ascending: true })
+              .range(from, to),
+          ),
+          supabase.auth.getSession(),
+        ]);
 
       if (cancelled) return;
 
@@ -112,6 +145,7 @@ export default function TransactionsPage() {
           ]),
         ),
       );
+      setCurrentUserId(sessionResult.data.session?.user.id);
       setError((transactionResult.error ?? accountResult.error)?.message);
       setLoading(false);
     };
@@ -187,7 +221,11 @@ export default function TransactionsPage() {
                     {amountFormat.format(Number(transaction.amount))}
                   </span>
                   <span className="text-xs text-muted-foreground">
-                    {dateFormat.format(new Date(transaction.created_at))}
+                    {dateFormat.format(new Date(transaction.created_at))} ·{" "}
+                    <Actor
+                      userId={transaction.created_by}
+                      currentUserId={currentUserId}
+                    />
                   </span>
                 </div>
                 <Button
