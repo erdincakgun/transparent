@@ -1,7 +1,7 @@
 import { cn } from "@/lib/utils";
 import { LogOutIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Field, FieldGroup } from "@/components/ui/field";
+import { Field, FieldError, FieldGroup } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import supabase from "@/lib/supabase/client";
@@ -15,6 +15,7 @@ export function LedgerCreateForm({
   const navigate = useNavigate();
   const { ledgers, refreshLedgers, selectLedger } = useLedger();
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState<string>();
 
   const signOut = () => {
     supabase.auth.signOut();
@@ -30,6 +31,7 @@ export function LedgerCreateForm({
     const description = formData.get("description")?.toString().trim();
 
     setSubmitted(true);
+    setError(undefined);
 
     const id = crypto.randomUUID();
     const { error } = await supabase
@@ -38,6 +40,7 @@ export function LedgerCreateForm({
 
     if (error) {
       setSubmitted(false);
+      setError(error.message);
       return;
     }
 
@@ -69,6 +72,11 @@ export function LedgerCreateForm({
               maxLength={1000}
             />
           </Field>
+          {error ? (
+            <Field>
+              <FieldError>{error}</FieldError>
+            </Field>
+          ) : null}
           <Field>
             <Button type="submit" disabled={submitted}>
               Create ledger
