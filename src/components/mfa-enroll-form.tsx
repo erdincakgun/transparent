@@ -19,7 +19,7 @@ export function MfaEnrollForm({
   const [secret, setSecret] = useState<string>();
   const [loading, setLoading] = useState(true);
   const [submitted, setSubmitted] = useState(false);
-  const [enrolled, setEnrolled] = useState(false);
+  const [verified, setVerified] = useState(false);
   const [error, setError] = useState<string>();
 
   useEffect(() => {
@@ -84,12 +84,12 @@ export function MfaEnrollForm({
       return;
     }
 
-    setEnrolled(true);
+    setVerified(true);
   }
 
   if (loading) return null;
 
-  if (enrolled) {
+  if (verified) {
     return (
       <div className={cn("flex flex-col gap-6", className)} {...props}>
         <FieldGroup>
