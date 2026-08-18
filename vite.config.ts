@@ -16,4 +16,23 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  build: {
+    rollupOptions: {
+      output: {
+        codeSplitting: {
+          groups: [
+            {
+              name: "vendor-supabase",
+              test: /\/node_modules\/@supabase\//,
+              priority: 1,
+            },
+            {
+              name: "dashboard",
+              test: /\/src\/(layouts\/dashboard|pages\/(settle-up|transactions|accounts|users))\.tsx$/,
+            },
+          ],
+        },
+      },
+    },
+  },
 })
