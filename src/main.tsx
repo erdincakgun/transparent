@@ -10,6 +10,7 @@ import { LedgerProvider } from "./components/ledger-provider.tsx";
 import {
   LoginPage,
   LedgerCreatePage,
+  LedgerDeletePage,
   MfaEnrollPage,
   MfaVerifyPage,
   MfaSettingsPage,
@@ -67,6 +68,10 @@ createRoot(document.getElementById("root")!).render(
                   <Route
                     path="/ledger-create"
                     element={withSuspense(LedgerCreatePage)}
+                  />
+                  <Route
+                    path="/ledgers/delete/:ledgerId"
+                    element={withSuspense(LedgerDeletePage)}
                   />
                   <Route
                     path="/account-create"
