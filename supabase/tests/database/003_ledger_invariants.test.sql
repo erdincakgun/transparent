@@ -4,7 +4,7 @@
 
 begin;
 create extension if not exists pgtap;
-select plan(24);
+select plan(30);
 
 create function pg_temp.exec_as(claims text, statement text)
 returns text language plpgsql as $$
@@ -215,5 +215,35 @@ select is(pg_temp.exec_as(pg_temp.owner(),
           'ERROR:23001',
           'removing yourself is refused once you are the only member left');
 
+select is(pg_temp.exec_as(pg_temp.owner(),
+          'insert into public.deleted_ledgers (ledger_id, deleted_by)
+           values (''00000000-0000-4000-f000-00000000002b'',
+                   ''00000000-0000-4000-f000-000000000021'')'),
+          'ERROR:42501', 'deleted_by is absent from the deleted_ledgers insert grant');
+
+select is((select count(*)::text from public.active_ledgers
+              where id in ('00000000-0000-4000-f000-00000000002a', '00000000-0000-4000-f000-00000000002b')), '2',
+          'both fixture ledgers are active before either is archived');
+
+select is(pg_temp.exec_as(pg_temp.owner(),
+          'insert into public.deleted_ledgers (ledger_id)
+           values (''00000000-0000-4000-f000-00000000002b'')'),
+          'OK', 'a member archives a ledger by inserting, like retiring an account');
+
+select is((select count(*)::text from public.active_ledgers
+              where id in ('00000000-0000-4000-f000-00000000002a', '00000000-0000-4000-f000-00000000002b')), '1',
+          'active_ledgers hides the archived one');
+
+select is((select count(*)::text from public.ledgers
+              where id in ('00000000-0000-4000-f000-00000000002a', '00000000-0000-4000-f000-00000000002b')), '2',
+          'archiving destroys nothing -- the ledger row is still there');
+
+select is(pg_temp.exec_as(pg_temp.owner(),
+          'delete from public.deleted_ledgers
+            where ledger_id = ''00000000-0000-4000-f000-00000000002b'''),
+          'ERROR:42501',
+          'un-archiving is refused at the grant layer -- authenticated has no delete on deleted_ledgers');
+
 select * from finish();
+
 rollback;
