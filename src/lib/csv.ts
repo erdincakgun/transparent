@@ -1,7 +1,11 @@
-const escape = (value: unknown) =>
-  value === null || value === undefined
-    ? ""
-    : `"${String(value).replace(/"/g, '""')}"`;
+const RISKY_LEADING_CHAR = /^[=+\-@\t\r]/;
+
+const escape = (value: unknown) => {
+  if (value === null || value === undefined) return "";
+  const raw = String(value);
+  const safe = RISKY_LEADING_CHAR.test(raw) ? `'${raw}` : raw;
+  return `"${safe.replace(/"/g, '""')}"`;
+};
 
 export function downloadCsv(
   filename: string,
@@ -15,7 +19,9 @@ export function downloadCsv(
     .map((row) => row.map(escape).join(","))
     .join("\r\n");
 
-  const url = URL.createObjectURL(new Blob([csv], { type: "text/csv" }));
+  const url = URL.createObjectURL(
+    new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" }),
+  );
   const link = document.createElement("a");
 
   link.href = url;
