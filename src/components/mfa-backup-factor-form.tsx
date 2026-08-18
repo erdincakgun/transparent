@@ -5,13 +5,6 @@ import supabase from "@/lib/supabase/client";
 import { mfaErrorMessage, verifyMfaCode } from "@/lib/supabase/mfa";
 import { MfaEnrollFields } from "@/components/mfa-enroll-fields";
 
-/**
- * Adds a second TOTP factor for a session that is already `aal2` (rendered
- * only from behind `RequireMfa`, where a verified factor is guaranteed to
- * already exist -- unlike `MfaEnrollForm`, this never has to check for one
- * or redirect away). GoTrue requires `aal2` to enroll once a verified factor
- * exists, which this route already guarantees.
- */
 export function MfaBackupFactorForm({
   onCancel,
   onEnrolled,
@@ -28,16 +21,12 @@ export function MfaBackupFactorForm({
   const [error, setError] = useState<string>();
 
   useEffect(() => {
-    // `enroll` mints a factor server-side, so it must survive StrictMode's
-    // second pass in dev without minting a second one
     if (enrolled.current) return;
     enrolled.current = true;
 
     const enroll = async () => {
       const { data: factors } = await supabase.auth.mfa.listFactors();
 
-      // an abandoned enrollment leaves its unverified factor behind, and those
-      // still count against the account's factor limit
       await Promise.all(
         (factors?.all ?? [])
           .filter((factor) => factor.status === "unverified")
