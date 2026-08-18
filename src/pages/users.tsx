@@ -1,19 +1,28 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
-import { DownloadIcon, PlusIcon, Trash2Icon } from "lucide-react";
+import { DownloadIcon, LogOutIcon, PlusIcon, Trash2Icon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLedger } from "@/components/ledger-provider";
+import { Actor } from "@/components/actor";
 import { downloadCsv } from "@/lib/csv";
+import { fetchAllRows } from "@/lib/pagination";
 import supabase from "@/lib/supabase/client";
 
-type LedgerUser = { user_id: string };
+type LedgerUser = { user_id: string; added_by: string; added_at: string };
 
-const exportColumns = ["ledger_id", "user_id"];
+const dateFormat = new Intl.DateTimeFormat(undefined, {
+  dateStyle: "medium",
+  timeStyle: "medium",
+  hourCycle: "h23",
+});
+
+const exportColumns = ["ledger_id", "user_id", "added_by", "added_at"];
 
 export default function UsersPage() {
   const { activeLedger, loading: ledgerLoading } = useLedger();
   const [users, setUsers] = useState<LedgerUser[]>([]);
+  const [ledgerCreatedBy, setLedgerCreatedBy] = useState<string>();
   const [currentUserId, setCurrentUserId] = useState<string>();
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
@@ -26,20 +35,35 @@ export default function UsersPage() {
 
     setExporting(true);
 
-    const { data, error } = await supabase
-      .from("ledgers_users")
-      .select(exportColumns.join(", "))
-      .eq("ledger_id", ledgerId)
-      .order("user_id");
+    const [{ data, error }, { count, error: countError }] = await Promise.all([
+      fetchAllRows((from, to) =>
+        supabase
+          .from("ledgers_users")
+          .select(exportColumns.join(", "))
+          .eq("ledger_id", ledgerId)
+          .order("added_at")
+          .order("user_id")
+          .range(from, to),
+      ),
+      supabase
+        .from("ledgers_users")
+        .select("*", { count: "exact", head: true })
+        .eq("ledger_id", ledgerId),
+    ]);
 
     setExporting(false);
 
-    if (error) {
-      setError(error.message);
+    if (error ?? countError) {
+      setError((error ?? countError)?.message);
       return;
     }
 
-    downloadCsv(`ledgers_users-${ledgerId}.csv`, exportColumns, data ?? []);
+    if (!data || data.length !== count) {
+      setError("Export incomplete — nothing was saved.");
+      return;
+    }
+
+    downloadCsv(`ledgers_users-${ledgerId}.csv`, exportColumns, data);
   }
 
   useEffect(() => {
@@ -47,6 +71,7 @@ export default function UsersPage() {
 
     if (!ledgerId) {
       setUsers([]);
+      setLedgerCreatedBy(undefined);
       setLoading(false);
       return;
     }
@@ -57,20 +82,30 @@ export default function UsersPage() {
       setLoading(true);
       setError(undefined);
 
-      const [userResult, sessionResult] = await Promise.all([
+      const [userResult, ledgerResult, sessionResult] = await Promise.all([
+        fetchAllRows<LedgerUser>((from, to) =>
+          supabase
+            .from("ledgers_users")
+            .select("user_id, added_by, added_at")
+            .eq("ledger_id", ledgerId)
+            .order("added_at")
+            .order("user_id")
+            .range(from, to),
+        ),
         supabase
-          .from("ledgers_users")
-          .select("user_id")
-          .eq("ledger_id", ledgerId)
-          .order("user_id"),
+          .from("ledgers")
+          .select("created_by")
+          .eq("id", ledgerId)
+          .maybeSingle(),
         supabase.auth.getSession(),
       ]);
 
       if (cancelled) return;
 
       setUsers(userResult.data ?? []);
+      setLedgerCreatedBy(ledgerResult.data?.created_by);
       setCurrentUserId(sessionResult.data.session?.user.id);
-      setError(userResult.error?.message);
+      setError((userResult.error ?? ledgerResult.error)?.message);
       setLoading(false);
     };
 
@@ -84,11 +119,19 @@ export default function UsersPage() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-center justify-between gap-2">
-        <p className="text-sm text-muted-foreground">
-          {loading
-            ? "Loading users"
-            : `${users.length} ${users.length === 1 ? "user" : "users"}`}
-        </p>
+        <div className="flex min-w-0 flex-col gap-0.5">
+          <p className="text-sm text-muted-foreground">
+            {loading
+              ? "Loading users"
+              : `${users.length} ${users.length === 1 ? "user" : "users"}`}
+          </p>
+          {ledgerCreatedBy ? (
+            <p className="text-xs text-muted-foreground">
+              Ledger created by{" "}
+              <Actor userId={ledgerCreatedBy} currentUserId={currentUserId} />
+            </p>
+          ) : null}
+        </div>
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
@@ -122,22 +165,58 @@ export default function UsersPage() {
               key={user.user_id}
               className="flex items-center justify-between gap-4 px-4 py-3"
             >
-              <span className="truncate text-sm font-medium">
-                {user.user_id}
-              </span>
+              <div className="flex min-w-0 flex-col gap-0.5">
+                <span className="truncate text-sm font-medium">
+                  {user.user_id}
+                </span>
+                <span className="truncate text-xs text-muted-foreground">
+                  added by{" "}
+                  <Actor userId={user.added_by} currentUserId={currentUserId} />{" "}
+                  · {dateFormat.format(new Date(user.added_at))}
+                </span>
+              </div>
               <div className="flex shrink-0 items-center gap-3">
                 {user.user_id === currentUserId ? (
-                  <span className="text-sm text-muted-foreground">You</span>
-                ) : null}
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  nativeButton={false}
-                  render={<Link to={`/users/delete/${user.user_id}`} />}
-                >
-                  <Trash2Icon />
-                  Delete
-                </Button>
+                  <>
+                    <span className="text-sm text-muted-foreground">You</span>
+                    {/* The last member cannot leave: with `ledgers_users`
+                        empty every policy stops resolving and the ledger
+                        becomes unreachable, which 007 refuses outright. The
+                        button is disabled rather than hidden so the reason is
+                        visible where the action would have been. */}
+                    {users.length === 1 ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled
+                        title="A ledger has to keep at least one member"
+                      >
+                        <LogOutIcon />
+                        Leave
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        nativeButton={false}
+                        render={<Link to={`/users/delete/${user.user_id}`} />}
+                      >
+                        <LogOutIcon />
+                        Leave
+                      </Button>
+                    )}
+                  </>
+                ) : (
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    nativeButton={false}
+                    render={<Link to={`/users/delete/${user.user_id}`} />}
+                  >
+                    <Trash2Icon />
+                    Delete
+                  </Button>
+                )}
               </div>
             </div>
           ))}
