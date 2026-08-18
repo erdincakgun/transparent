@@ -38,7 +38,7 @@ const writeStoredLedgerId = (storageKey: string | undefined, id: string) => {
 
 const fetchLedgers = async (): Promise<Ledger[]> => {
   const { data } = await supabase
-    .from("ledgers")
+    .from("active_ledgers")
     .select("id, name")
     .order("name");
 
