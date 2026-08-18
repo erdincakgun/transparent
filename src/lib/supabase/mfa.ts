@@ -1,4 +1,4 @@
-import type { AuthError } from "@supabase/supabase-js";
+import type { AuthError, Factor } from "@supabase/supabase-js";
 import supabase from "@/lib/supabase/client";
 
 /**
@@ -19,6 +19,40 @@ export const verifyMfaCode = async (factorId: string, code: string) => {
   });
 
   return error;
+};
+
+/**
+ * `listFactors().data.totp` already lists verified factors only, but every
+ * caller still has to unwrap `{ data, error }` the same way -- centralised so
+ * a factor list can be requested from more than the two original screens.
+ */
+export const listVerifiedTotpFactors = async () => {
+  const { data, error } = await supabase.auth.mfa.listFactors();
+
+  return { factors: (data?.totp ?? []) as Factor<"totp", "verified">[], error };
+};
+
+/**
+ * A user may hold more than one verified TOTP factor (a primary and a
+ * backup), so a code has to be tried against each until one accepts it.
+ * Stops early on a rate limit instead of burning the remaining attempts.
+ */
+export const verifyMfaCodeAnyFactor = async (
+  factorIds: string[],
+  code: string,
+) => {
+  let lastError: AuthError | null = null;
+
+  for (const factorId of factorIds) {
+    const error = await verifyMfaCode(factorId, code);
+
+    if (!error) return null;
+    if (error.code === "over_request_rate_limit") return error;
+
+    lastError = error;
+  }
+
+  return lastError;
 };
 
 /**
