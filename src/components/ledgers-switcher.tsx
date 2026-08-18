@@ -14,7 +14,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useLedger } from "@/components/ledger-provider";
-import { ChevronsUpDownIcon, PlusIcon } from "lucide-react";
+import { Archive, ChevronsUpDownIcon, PlusIcon } from "lucide-react";
 import { useNavigate } from "react-router";
 
 export function LedgerSwitcher() {
@@ -78,6 +78,21 @@ export function LedgerSwitcher() {
                   Add ledger
                 </div>
               </DropdownMenuItem>
+              {activeLedger ? (
+                <DropdownMenuItem
+                  className="gap-2 p-2"
+                  onClick={() =>
+                    navigate(`/ledgers/delete/${activeLedger.id}`)
+                  }
+                >
+                  <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
+                    <Archive className="size-4" />
+                  </div>
+                  <div className="font-medium text-muted-foreground">
+                    Archive this ledger
+                  </div>
+                </DropdownMenuItem>
+              ) : null}
             </DropdownMenuGroup>
           </DropdownMenuContent>
         </DropdownMenu>
