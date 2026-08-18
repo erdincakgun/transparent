@@ -7,10 +7,15 @@ import {
   FieldGroup,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import supabase from "@/lib/supabase/client";
 import { Link, useNavigate, useParams } from "react-router";
 import { useLedger } from "@/components/ledger-provider";
+import {
+  listVerifiedTotpFactors,
+  mfaErrorMessage,
+  verifyMfaCodeAnyFactor,
+} from "@/lib/supabase/mfa";
 
 export function UserDeleteForm({
   className,
@@ -19,18 +24,56 @@ export function UserDeleteForm({
   const navigate = useNavigate();
   const { userId } = useParams();
   const { ledgers, activeLedger, refreshLedgers, loading } = useLedger();
+  const [factorIds, setFactorIds] = useState<string[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<string>();
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string>();
 
   const ledgerId = activeLedger?.id;
+  const leavingSelf = !!currentUserId && userId === currentUserId;
 
-  async function handleSubmit(e: { preventDefault: () => void }) {
+  useEffect(() => {
+    let cancelled = false;
+
+    const load = async () => {
+      const [{ factors, error }, sessionResult] = await Promise.all([
+        listVerifiedTotpFactors(),
+        supabase.auth.getSession(),
+      ]);
+
+      if (cancelled) return;
+
+      setFactorIds(factors.map((factor) => factor.id));
+      setCurrentUserId(sessionResult.data.session?.user.id);
+      if (error) setError(mfaErrorMessage(error));
+    };
+
+    load();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  async function handleSubmit(e: { preventDefault: () => void; target: any }) {
     e.preventDefault();
 
     if (!ledgerId || !userId) return;
 
+    const form = e.target;
+    const formData = new FormData(form);
+    const code = formData.get("code")?.toString().trim() ?? "";
+
     setSubmitted(true);
     setError(undefined);
+
+    const mfaError = await verifyMfaCodeAnyFactor(factorIds, code);
+
+    if (mfaError) {
+      setSubmitted(false);
+      setError(mfaErrorMessage(mfaError));
+      return;
+    }
 
     const { error, count } = await supabase
       .from("ledgers_users")
@@ -41,7 +84,11 @@ export function UserDeleteForm({
     if (error) {
       setSubmitted(false);
       setError(
-        error.code === "22P02" ? "That is not a valid user ID." : error.message,
+        error.code === "22P02"
+          ? "That is not a valid user ID."
+          : error.code === "23001"
+            ? "A ledger has to keep at least one member."
+            : error.message,
       );
       return;
     }
@@ -52,9 +99,13 @@ export function UserDeleteForm({
       return;
     }
 
-    await refreshLedgers();
+    const ledgersLeft = await refreshLedgers();
 
-    navigate("/users", { replace: true });
+    // Removing yourself drops this ledger out of your list, so /users would
+    // render whichever ledger the provider fell back to — or none at all.
+    navigate(leavingSelf || !ledgersLeft.length ? "/" : "/users", {
+      replace: true,
+    });
   }
 
   if (loading) return null;
@@ -103,6 +154,22 @@ export function UserDeleteForm({
               stays.
             </FieldDescription>
           </Field>
+          <Field>
+            <Input
+              id="code"
+              name="code"
+              type="text"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              maxLength={6}
+              placeholder="Enter the six digits from your app"
+              disabled={!factorIds.length}
+              required
+            />
+            <FieldDescription>
+              Confirm with your authenticator app before removing this user.
+            </FieldDescription>
+          </Field>
           {error ? (
             <Field>
               <FieldError>{error}</FieldError>
@@ -112,7 +179,7 @@ export function UserDeleteForm({
             <Button
               type="submit"
               variant="destructive"
-              disabled={submitted || !userId}
+              disabled={submitted || !userId || !factorIds.length}
             >
               Delete user
             </Button>
