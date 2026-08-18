@@ -18,10 +18,6 @@ export function LoginForm({
   const [captchaToken, setCaptchaToken] = useState<string | undefined>();
   const [emailSent, setEmailSent] = useState(false);
   const [submitted, setSubmitted] = useState(false);
-  // A magic link that could not be redeemed arrives here as a redirect from
-  // `RequireAuth`, which forwards the original query string in router state.
-  // Reading it once, as the initial value, means submitting clears it like any
-  // other error and a later sign-out shows a clean form.
   const [error, setError] = useState<string | undefined>(() =>
     callbackMessage(
       (location.state as { from?: { search?: string } } | null)?.from?.search ??
