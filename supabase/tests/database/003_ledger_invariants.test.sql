@@ -179,11 +179,6 @@ select is(
     where ledger_id = '00000000-0000-4000-f000-00000000002a' and amount <= 0),
   '0', 'no settlement transfer is zero or negative');
 
--- ------------------------------------------ a ledger keeps one member ----
--- Emptying `ledgers_users` strands the ledger: every policy resolves through
--- `is_ledger_member`, so the rows stay but nobody can read them, and putting a
--- member back needs a membership that is already gone. L2 gets a second member
--- so both directions are asserted against the same ledger.
 
 insert into auth.users (id, instance_id, aud, role, email, encrypted_password,
                         email_confirmed_at, created_at, updated_at,
