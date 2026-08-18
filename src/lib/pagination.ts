@@ -15,10 +15,12 @@ export async function fetchAllRows<T>(
 
     if (error) return { data: null, error };
 
-    rows.push(...(data ?? []));
+    const page = data ?? [];
 
-    if (!data || data.length < PAGE_SIZE) return { data: rows, error: null };
+    rows.push(...page);
 
-    from += PAGE_SIZE;
+    if (!page.length) return { data: rows, error: null };
+
+    from += page.length;
   }
 }
