@@ -21,23 +21,17 @@ export function MfaEnrollForm({
   const [error, setError] = useState<string>();
 
   useEffect(() => {
-    // `enroll` mints a factor server-side, so it must survive StrictMode's
-    // second pass in dev without minting a second one
     if (enrolled.current) return;
     enrolled.current = true;
 
     const enroll = async () => {
       const { data: factors } = await supabase.auth.mfa.listFactors();
 
-      // `totp` only ever lists verified factors — having one means this screen
-      // is the wrong one
       if (factors?.totp.length) {
         navigate("/mfa-verify", { replace: true });
         return;
       }
 
-      // an abandoned enrollment leaves its unverified factor behind, and those
-      // still count against the account's factor limit
       await Promise.all(
         (factors?.all ?? [])
           .filter((factor) => factor.status === "unverified")
