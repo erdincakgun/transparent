@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLedger } from "@/components/ledger-provider";
 import { downloadCsv } from "@/lib/csv";
+import { fetchAllRows } from "@/lib/pagination";
 import { trimAmount } from "@/lib/utils";
 import supabase from "@/lib/supabase/client";
 
@@ -41,24 +42,36 @@ export default function SettleUpPage() {
 
     setExporting(true);
 
-    const { data, error } = await supabase
-      .from("settlement_transfers")
-      .select(exportColumns.join(", "))
-      .eq("ledger_id", ledgerId)
-      .order("amount", { ascending: false });
+    const [{ data, error }, { count, error: countError }] = await Promise.all([
+      fetchAllRows((from, to) =>
+        supabase
+          .from("settlement_transfers")
+          .select(exportColumns.join(", "))
+          .eq("ledger_id", ledgerId)
+          .order("amount", { ascending: false })
+          .order("from_account_id", { ascending: true })
+          .order("to_account_id", { ascending: true })
+          .range(from, to),
+      ),
+      supabase
+        .from("settlement_transfers")
+        .select("*", { count: "exact", head: true })
+        .eq("ledger_id", ledgerId),
+    ]);
 
     setExporting(false);
 
-    if (error) {
-      setError(error.message);
+    if (error ?? countError) {
+      setError((error ?? countError)?.message);
       return;
     }
 
-    downloadCsv(
-      `settlement_transfers-${ledgerId}.csv`,
-      exportColumns,
-      data ?? [],
-    );
+    if (!data || data.length !== count) {
+      setError("Export incomplete — nothing was saved.");
+      return;
+    }
+
+    downloadCsv(`settlement_transfers-${ledgerId}.csv`, exportColumns, data);
   }
 
   useEffect(() => {
@@ -77,12 +90,24 @@ export default function SettleUpPage() {
       setError(undefined);
 
       const [transferResult, accountResult] = await Promise.all([
-        supabase
-          .from("settlement_transfers")
-          .select("from_account_id, to_account_id, amount::text")
-          .eq("ledger_id", ledgerId)
-          .order("amount", { ascending: false }),
-        supabase.from("accounts").select("id, name").eq("ledger_id", ledgerId),
+        fetchAllRows<SettlementTransfer>((from, to) =>
+          supabase
+            .from("settlement_transfers")
+            .select("from_account_id, to_account_id, amount::text")
+            .eq("ledger_id", ledgerId)
+            .order("amount", { ascending: false })
+            .order("from_account_id", { ascending: true })
+            .order("to_account_id", { ascending: true })
+            .range(from, to),
+        ),
+        fetchAllRows<{ id: string; name: string }>((from, to) =>
+          supabase
+            .from("accounts")
+            .select("id, name")
+            .eq("ledger_id", ledgerId)
+            .order("id", { ascending: true })
+            .range(from, to),
+        ),
       ]);
 
       if (cancelled) return;
