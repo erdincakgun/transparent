@@ -155,8 +155,9 @@ that pattern.
   balance. It first matches exact opposite pairs (`+50` against `−50`), then greedily
   matches the remainder by overlapping running-sum intervals. It is pure SQL over
   `account_balances` — do not reimplement any of this arithmetic in the client.
-- `public.active_accounts` (`004_active_accounts.sql`) → `id, ledger_id, name,
-  description`, every account with no `deleted_accounts` row. **Anything that offers an
+- `public.active_accounts` (`004_active_accounts.sql`, widened by
+  `006_row_attribution.sql`) → `id, ledger_id, name, description, created_by`, every
+  account with no `deleted_accounts` row. **Anything that offers an
   account to pick reads this, not `accounts`** — the accounts list and its CSV export,
   both transaction selects, the heir select on the delete form. Name lookups on the
   transactions and settle-up pages still read `accounts`, because a retired account keeps
@@ -180,9 +181,25 @@ API, so there is no way to look a person up. The sidebar user menu offers "Copy 
   `/mfa-enroll` and `/mfa-verify` are the only routes between `RequireAuth` and
   `RequireMfa` — they need a session but cannot need `aal2`, because reaching `aal2` is
   what they are for.
-- Adding a dashboard route means touching **three** places: the `<Route>` in `main.tsx`,
-  the breadcrumb `pageNames` map in `layouts/dashboard.tsx`, and `data.navItems` in
-  `components/app-sidebar.tsx`.
+- Adding a dashboard route means touching **four** places: the lazy import in
+  `src/lazy-pages.tsx`, the `<Route>` in `main.tsx`, the breadcrumb `pageNames` map in
+  `layouts/dashboard.tsx`, and `data.navItems` in `components/app-sidebar.tsx`.
+- **Every route component is code-split.** `src/lazy-pages.tsx` holds the `React.lazy(()
+  => import(...))` declaration for each page and for `Dashboard`; `main.tsx` wraps every
+  route's `element` in `<Suspense fallback={null}>` via a local `withSuspense` helper.
+  This has to be `React.lazy` + `Suspense`, not react-router's `<Route lazy={...}>` prop —
+  this app uses plain `<BrowserRouter><Routes>`, and `route.lazy` is only ever read on a
+  data router (`createBrowserRouter`/`RouterProvider`); it type-checks here but is
+  silently inert. The lazy declarations live in their own file, not inline in `main.tsx`,
+  because oxlint's `only-export-components` flags component-shaped bindings in a file that
+  has no exports of its own — `main.tsx` exports nothing. `RequireAuth`, `RequireMfa` and
+  `LedgerProvider` stay eager and outside any Suspense boundary, so a lazy chunk resolving
+  below them never remounts the auth subscription or re-fires the ledger fetch.
+  `vite.config.ts` forces `Dashboard` + its 4 nested pages into one `codeSplitting` group
+  (one tool, multiple tabs in a session) and `@supabase/supabase-js` into its own vendor
+  chunk for cache stability — note Vite 8 here is Rolldown-backed, so `manualChunks` only
+  takes the function form and `output.codeSplitting.groups` is the non-deprecated
+  mechanism; the common `{ vendor: [...] }` object-form snippet does not work.
 - **shadcn `base-nova` style built on `@base-ui/react`, not Radix.** Composition uses the
   `render={<Component />}` prop, *not* `asChild` (and `nativeButton={false}` when a
   `Button` renders a `Link`). `SelectValue` takes a *render function* child receiving the
@@ -224,6 +241,24 @@ screens carry a **Log out** button; without one a half-enrolled user has no way 
 Local dev needs `enroll_enabled`/`verify_enabled` under `[auth.mfa.totp]` in
 `supabase/config.toml`, and a `supabase stop && supabase start` to load them — `db reset`
 alone does not.
+
+A user may hold more than one verified TOTP factor — `/mfa-settings`
+(`src/components/mfa-settings-form.tsx`, linked from the sidebar user menu) lets an
+already-`aal2` user enroll a second ("backup") factor via `MfaBackupFactorForm`, which
+reuses the same QR/secret/code markup (`MfaEnrollFields`) as first-time enrollment.
+GoTrue requires `aal2` to enroll or unenroll once a verified factor exists, so this
+screen — not a locked-out session — is the only place either operation can happen.
+"Remove" is disabled whenever it's the last remaining factor, client-enforced the same
+way `RequireMfa` itself is UX-only: the real backstop is that GoTrue never lets a
+session reach `aal2` with zero factors to challenge. Because a factor can no longer be
+assumed unique, sign-in and step-up both check every verified factor rather than just
+one — `listVerifiedTotpFactors`/`verifyMfaCodeAnyFactor` (`src/lib/supabase/mfa.ts`)
+replace the old single-`factorId` lookup in `mfa-verify-form.tsx`.
+
+This is preventive, not curative: a user who loses their only device without ever
+enrolling a backup is still locked out for good, since redeeming a code can't mint an
+`aal2` session on its own and this repo has no service key to force one server-side.
+See "Known gaps" below.
 
 ### The active ledger
 
@@ -267,6 +302,18 @@ Views are selected as `"…, balance::text"` / `"amount::text"` for the same rea
 drop the cast. `trimAmount` (`src/lib/utils.ts`) strips trailing fractional zeros when an
 amount has to travel through a URL.
 
+**Attribution is shown as a uuid, because that is all there is.** Every list page renders
+its `*_by` column through `Actor` (`src/components/actor.tsx`): the first block of the
+uuid in `font-mono`, the whole of it in the `title`, and the word "you" when it matches
+the reader's own id. There is nothing to resolve it against — `auth.users` is not exposed,
+the same reason membership is granted by id. Pages fetch the reader's id with
+`supabase.auth.getSession()` inside their existing `Promise.all`. The transactions list
+pairs it with the timestamp, the accounts list reads "opened by", the users list shows
+"added by … · `added_at`" per member plus the ledger's own `created_by` in the header, and
+each page's `exportColumns` carries the column so it lands in the CSV too.
+`deleted_accounts.deleted_by` is the one attribution column with no screen — the app never
+lists retired accounts.
+
 **CSV export** is `downloadCsv(filename, columns, rows)` (`src/lib/csv.ts`), on every list
 page. The same `exportColumns` array is both the PostgREST select list and the CSV header
 — `downloadCsv` splits each column on `::` so a `amount::text` cast still exports as
@@ -295,8 +342,6 @@ viewport wrapping a `*-form` component that holds all logic.
 
 ## Known gaps
 
-- No generated Supabase types — `supabase.from(...)` is untyped and every row shape is
-  hand-declared at the top of the file that reads it. `supabase gen types` would fix this.
 - No member role model (every ledger member has equal rights). Tracked as B1–B5 in the
   pre-production audit and being worked through in order.
 - The four list/export pages (`transactions`, `accounts`, `settle-up`, `users`) page
@@ -305,12 +350,19 @@ viewport wrapping a `*-form` component that holds all logic.
   writing the CSV. The account-picker dropdowns in `transaction-create-form.tsx` and
   `account-delete-form.tsx` still read `active_accounts` unbounded — lower risk since it
   only bites a ledger with more than 1,000 accounts, but the same class of bug.
-- There is no MFA settings screen, and deliberately no way to turn MFA off. A user who
-  loses their authenticator is locked out: recovery means deleting their factor with
-  `auth.admin.mfa.deleteFactor`, which needs a service key, and this repo has none. Adding
-  recovery codes or a support path is the obvious next step.
+- There is deliberately no way to turn MFA off. Recovery is a **second enrolled TOTP
+  factor**, managed from `/mfa-settings` (`mfa-settings-form.tsx`, reached from the
+  "Manage two-factor" item in the sidebar user menu). It lists the verified factors, lets
+  an already-`aal2` user enrol a backup, and refuses to remove the last remaining one.
+  Because two factors can now exist, anything checking a code must try *all* of them —
+  `listVerifiedTotpFactors` / `verifyMfaCodeAnyFactor` in `src/lib/supabase/mfa.ts`;
+  the old `factors.totp[0]` shortcut silently locked out anyone verifying with their
+  backup. Recovery *codes* are not an option and should not be attempted: GoTrue is the
+  only thing that mints the `aal` claim and every policy requires `aal2`, so a table of
+  our own could never elevate a session no matter how it was wired — not even through a
+  service-role hook. **The gap that remains:** a user who loses *both* factors is locked
+  out for good, because `auth.admin.mfa.deleteFactor` needs a service key and this repo
+  has none.
 - MFA on hosted Supabase requires a Pro plan; only the local stack is free.
-- `README.md` is still the stock Vite template.
 - `yarn lint` passes with three `only-export-components` fast-refresh warnings
   (`theme-provider`, `ledger-provider`, `ui/sidebar`) — those are known and expected.
-- The production bundle is a single ~740 kB chunk; vite warns about it on every build.
