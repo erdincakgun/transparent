@@ -2,6 +2,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldGroup } from "@/components/ui/field";
 import { useEffect, useRef, useState } from "react";
+import { ShieldCheckIcon } from "lucide-react";
 import supabase from "@/lib/supabase/client";
 import { mfaErrorMessage, verifyMfaCode } from "@/lib/supabase/mfa";
 import { useNavigate } from "react-router";
@@ -18,6 +19,7 @@ export function MfaEnrollForm({
   const [secret, setSecret] = useState<string>();
   const [loading, setLoading] = useState(true);
   const [submitted, setSubmitted] = useState(false);
+  const [enrolled, setEnrolled] = useState(false);
   const [error, setError] = useState<string>();
 
   useEffect(() => {
@@ -82,10 +84,43 @@ export function MfaEnrollForm({
       return;
     }
 
-    navigate("/", { replace: true });
+    setEnrolled(true);
   }
 
   if (loading) return null;
+
+  if (enrolled) {
+    return (
+      <div className={cn("flex flex-col gap-6", className)} {...props}>
+        <FieldGroup>
+          <Field>
+            <p className="text-center text-sm text-muted-foreground">
+              Two-factor is on. Add a second authenticator now — if you lose
+              this device and it is your only one, nobody can get you back in.
+            </p>
+          </Field>
+          <Field>
+            <Button
+              type="button"
+              onClick={() => navigate("/mfa-settings", { replace: true })}
+            >
+              <ShieldCheckIcon />
+              Add a backup authenticator
+            </Button>
+          </Field>
+          <Field>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => navigate("/", { replace: true })}
+            >
+              Not now
+            </Button>
+          </Field>
+        </FieldGroup>
+      </div>
+    );
+  }
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
