@@ -19,12 +19,11 @@ export function AccountCreateForm({
   ...props
 }: React.ComponentProps<"div">) {
   const navigate = useNavigate();
-  const { ledgers, activeLedger, loading } = useLedger();
-  const [selectedLedgerId, setSelectedLedgerId] = useState<string | null>(null);
+  const { ledgers, activeLedger, selectLedger, loading } = useLedger();
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string>();
 
-  const ledgerId = selectedLedgerId ?? activeLedger?.id ?? null;
+  const ledgerId = activeLedger?.id ?? null;
 
   async function handleSubmit(e: { preventDefault: () => void; target: any }) {
     e.preventDefault();
@@ -82,9 +81,9 @@ export function AccountCreateForm({
           <Field>
             <Select
               value={ledgerId}
-              onValueChange={(value: string | null) =>
-                setSelectedLedgerId(value)
-              }
+              onValueChange={(value: string | null) => {
+                if (value) selectLedger(value);
+              }}
             >
               <SelectTrigger className="w-full data-[size=default]:h-auto">
                 <SelectValue className="line-clamp-none">
