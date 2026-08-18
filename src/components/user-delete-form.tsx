@@ -101,8 +101,6 @@ export function UserDeleteForm({
 
     const ledgersLeft = await refreshLedgers();
 
-    // Removing yourself drops this ledger out of your list, so /users would
-    // render whichever ledger the provider fell back to — or none at all.
     navigate(leavingSelf || !ledgersLeft.length ? "/" : "/users", {
       replace: true,
     });
