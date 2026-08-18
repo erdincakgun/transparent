@@ -293,9 +293,9 @@ viewport wrapping a `*-form` component that holds all logic.
 
 - No generated Supabase types — `supabase.from(...)` is untyped and every row shape is
   hand-declared at the top of the file that reads it. `supabase gen types` would fix this.
-- No CSV formula-injection guard, no row-attribution columns, no member role model, and
-  every list/export silently truncates at PostgREST's `max_rows = 1000`. These are tracked
-  as B1–B5 in the pre-production audit and are being worked through in order.
+- No row-attribution columns, no member role model, and every list/export silently
+  truncates at PostgREST's `max_rows = 1000`. These are tracked as B1–B5 in the
+  pre-production audit and are being worked through in order.
 - There is no MFA settings screen, and deliberately no way to turn MFA off. A user who
   loses their authenticator is locked out: recovery means deleting their factor with
   `auth.admin.mfa.deleteFactor`, which needs a service key, and this repo has none. Adding
