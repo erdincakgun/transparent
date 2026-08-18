@@ -5,7 +5,7 @@
 
 begin;
 create extension if not exists pgtap;
-select plan(27);
+select plan(29);
 
 create function pg_temp.exec_as(claims text, statement text)
 returns text language plpgsql as $$
@@ -166,5 +166,16 @@ select is(pg_temp.exec_as(pg_temp.member(),
            values (''00000000-0000-4000-f000-00000000001a'', ''00000000-0000-4000-f000-000000000099'', now())'),
           'ERROR:42501', 'added_at is absent from the ledgers_users insert grant');
 
+select is(pg_temp.exec_as(pg_temp.member(),
+          'insert into public.ledgers (id, name, created_at)
+           values (gen_random_uuid(), ''x'', now())'),
+          'ERROR:42501', 'created_at is absent from the ledgers insert grant');
+
+select is(pg_temp.exec_as(pg_temp.member(),
+          'insert into public.accounts (ledger_id, name, created_at)
+           values (''00000000-0000-4000-f000-00000000001a'', ''ts'', now())'),
+          'ERROR:42501', 'created_at is absent from the accounts insert grant');
+
 select * from finish();
+
 rollback;
