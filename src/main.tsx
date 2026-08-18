@@ -1,26 +1,37 @@
-import { StrictMode } from "react";
+import { StrictMode, Suspense, type ComponentType } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
 import { BrowserRouter, Routes, Route, Outlet } from "react-router";
-import LoginPage from "@/pages/login.tsx";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { ThemeProvider } from "@/components/theme-provider";
-import LedgerCreatePage from "@/pages/ledger-create.tsx";
 import { RequireAuth } from "./components/require-auth.tsx";
 import { RequireMfa } from "./components/require-mfa.tsx";
-import MfaEnrollPage from "./pages/mfa-enroll.tsx";
-import MfaVerifyPage from "./pages/mfa-verify.tsx";
-import Dashboard from "./layouts/dashboard.tsx";
-import SettleUpPage from "./pages/settle-up.tsx";
-import TransactionsPage from "./pages/transactions.tsx";
-import AccountsPage from "./pages/accounts.tsx";
-import UsersPage from "./pages/users.tsx";
-import AccountCreatePage from "./pages/account-create.tsx";
-import AccountDeletePage from "./pages/account-delete.tsx";
-import TransactionCreatePage from "./pages/transaction-create.tsx";
-import UserAddPage from "./pages/user-add.tsx";
-import UserDeletePage from "./pages/user-delete.tsx";
 import { LedgerProvider } from "./components/ledger-provider.tsx";
+import {
+  LoginPage,
+  LedgerCreatePage,
+  MfaEnrollPage,
+  MfaVerifyPage,
+  MfaSettingsPage,
+  Dashboard,
+  SettleUpPage,
+  TransactionsPage,
+  AccountsPage,
+  UsersPage,
+  AccountCreatePage,
+  AccountDeletePage,
+  TransactionCreatePage,
+  UserAddPage,
+  UserDeletePage,
+} from "./lazy-pages.tsx";
+
+function withSuspense(Component: ComponentType) {
+  return (
+    <Suspense fallback={null}>
+      <Component />
+    </Suspense>
+  );
+}
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
@@ -28,11 +39,15 @@ createRoot(document.getElementById("root")!).render(
       <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
         <BrowserRouter>
           <Routes>
-            <Route path="/login" element={<LoginPage />} />
+            <Route path="/login" element={withSuspense(LoginPage)} />
             <Route element={<RequireAuth />}>
-              <Route path="/mfa-enroll" element={<MfaEnrollPage />} />
-              <Route path="/mfa-verify" element={<MfaVerifyPage />} />
+              <Route path="/mfa-enroll" element={withSuspense(MfaEnrollPage)} />
+              <Route path="/mfa-verify" element={withSuspense(MfaVerifyPage)} />
               <Route element={<RequireMfa />}>
+                <Route
+                  path="/mfa-settings"
+                  element={withSuspense(MfaSettingsPage)}
+                />
                 <Route
                   element={
                     <LedgerProvider>
@@ -40,32 +55,35 @@ createRoot(document.getElementById("root")!).render(
                     </LedgerProvider>
                   }
                 >
-                  <Route element={<Dashboard />}>
-                    <Route path="/" element={<SettleUpPage />} />
+                  <Route element={withSuspense(Dashboard)}>
+                    <Route path="/" element={withSuspense(SettleUpPage)} />
                     <Route
                       path="/transactions"
-                      element={<TransactionsPage />}
+                      element={withSuspense(TransactionsPage)}
                     />
-                    <Route path="/accounts" element={<AccountsPage />} />
-                    <Route path="/users" element={<UsersPage />} />
+                    <Route path="/accounts" element={withSuspense(AccountsPage)} />
+                    <Route path="/users" element={withSuspense(UsersPage)} />
                   </Route>
-                  <Route path="/ledger-create" element={<LedgerCreatePage />} />
+                  <Route
+                    path="/ledger-create"
+                    element={withSuspense(LedgerCreatePage)}
+                  />
                   <Route
                     path="/account-create"
-                    element={<AccountCreatePage />}
+                    element={withSuspense(AccountCreatePage)}
                   />
                   <Route
                     path="/accounts/delete/:accountId"
-                    element={<AccountDeletePage />}
+                    element={withSuspense(AccountDeletePage)}
                   />
                   <Route
                     path="/transaction-create"
-                    element={<TransactionCreatePage />}
+                    element={withSuspense(TransactionCreatePage)}
                   />
-                  <Route path="/user-add" element={<UserAddPage />} />
+                  <Route path="/user-add" element={withSuspense(UserAddPage)} />
                   <Route
                     path="/users/delete/:userId"
-                    element={<UserDeletePage />}
+                    element={withSuspense(UserDeletePage)}
                   />
                 </Route>
               </Route>
