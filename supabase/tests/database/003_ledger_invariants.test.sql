@@ -4,7 +4,7 @@
 
 begin;
 create extension if not exists pgtap;
-select plan(19);
+select plan(24);
 
 create function pg_temp.exec_as(claims text, statement text)
 returns text language plpgsql as $$
@@ -178,6 +178,47 @@ select is(
   (select count(*)::text from public.settlement_transfers
     where ledger_id = '00000000-0000-4000-f000-00000000002a' and amount <= 0),
   '0', 'no settlement transfer is zero or negative');
+
+-- ------------------------------------------ a ledger keeps one member ----
+-- Emptying `ledgers_users` strands the ledger: every policy resolves through
+-- `is_ledger_member`, so the rows stay but nobody can read them, and putting a
+-- member back needs a membership that is already gone. L2 gets a second member
+-- so both directions are asserted against the same ledger.
+
+insert into auth.users (id, instance_id, aud, role, email, encrypted_password,
+                        email_confirmed_at, created_at, updated_at,
+                        confirmation_token, recovery_token, email_change_token_new, email_change)
+values ('00000000-0000-4000-f000-000000000022', '00000000-0000-0000-0000-000000000000',
+        'authenticated', 'authenticated', 'inv2@test.invalid', '', now(), now(), now(), '', '', '', '');
+
+select is(pg_temp.exec_as(pg_temp.owner(),
+          'insert into public.ledgers_users (ledger_id, user_id)
+           values (''00000000-0000-4000-f000-00000000002b'',
+                   ''00000000-0000-4000-f000-000000000022'')'),
+          'OK', 'a member adds a second member to L2');
+
+select is(pg_temp.exec_as(pg_temp.owner(),
+          'delete from public.ledgers_users
+            where ledger_id = ''00000000-0000-4000-f000-00000000002b'''),
+          'ERROR:23001',
+          'an unfiltered delete that would empty a ledger is refused for the last row');
+
+select is((select count(*)::text from public.ledgers_users
+            where ledger_id = '00000000-0000-4000-f000-00000000002b'),
+          '2', 'that refusal rolled the whole statement back -- both members survive');
+
+select is(pg_temp.exec_as(pg_temp.owner(),
+          'delete from public.ledgers_users
+            where ledger_id = ''00000000-0000-4000-f000-00000000002b''
+              and user_id = ''00000000-0000-4000-f000-000000000022'''),
+          'OK', 'removing a member while another remains is still permitted');
+
+select is(pg_temp.exec_as(pg_temp.owner(),
+          'delete from public.ledgers_users
+            where ledger_id = ''00000000-0000-4000-f000-00000000002b''
+              and user_id = ''00000000-0000-4000-f000-000000000021'''),
+          'ERROR:23001',
+          'removing yourself is refused once you are the only member left');
 
 select * from finish();
 rollback;
