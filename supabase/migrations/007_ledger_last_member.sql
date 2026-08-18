@@ -1,18 +1,3 @@
--- A ledger with no members is unreachable. Every policy resolves membership
--- through `private.is_ledger_member`, so the rows survive but nothing can read
--- them -- and `ledgers_users_insert_member` needs a membership that no longer
--- exists to put one back. Nothing the app offers can repair it; only an
--- operator connecting as `postgres` (which carries `bypassrls`) can insert the
--- row that makes the ledger visible again.
---
--- `delete` on `ledgers_users` stays the schema's one permitted mutation. This
--- refuses exactly the delete that would empty a ledger, and nothing else.
---
--- The check runs per row, so it also catches an unfiltered
--- `delete from ledgers_users where ledger_id = …`: the earlier rows go first,
--- and the last one finds no sibling left and raises, which rolls the whole
--- statement back.
-
 create function private.reject_last_member_removal()
 returns trigger
 language plpgsql
