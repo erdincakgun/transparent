@@ -11,7 +11,13 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import supabase from "@/lib/supabase/client";
-import { Copy, CopyCheck, LogOutIcon, MoreHorizontalIcon } from "lucide-react";
+import {
+  Copy,
+  CopyCheck,
+  LogOutIcon,
+  MoreHorizontalIcon,
+  ShieldCheckIcon,
+} from "lucide-react";
 import { useNavigate } from "react-router";
 import { useState } from "react";
 
@@ -74,6 +80,10 @@ export function NavUser({
             >
               {copied ? <CopyCheck /> : <Copy />}
               Copy user ID
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate("/mfa-settings")}>
+              <ShieldCheckIcon />
+              Manage two-factor
             </DropdownMenuItem>
             <DropdownMenuItem onClick={signOut}>
               <LogOutIcon />
