@@ -18,6 +18,11 @@ import { useEffect, useState } from "react";
 import supabase from "@/lib/supabase/client";
 import { Link, useNavigate, useParams } from "react-router";
 import { useLedger } from "@/components/ledger-provider";
+import {
+  listVerifiedTotpFactors,
+  mfaErrorMessage,
+  verifyMfaCodeAnyFactor,
+} from "@/lib/supabase/mfa";
 
 type Account = { id: string; name: string };
 
@@ -38,6 +43,7 @@ export function AccountDeleteForm({
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [balance, setBalance] = useState("0");
   const [heirId, setHeirId] = useState<string | null>(null);
+  const [factorIds, setFactorIds] = useState<string[]>([]);
   const [accountsLoading, setAccountsLoading] = useState(true);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string>();
@@ -61,7 +67,7 @@ export function AccountDeleteForm({
     const load = async () => {
       setAccountsLoading(true);
 
-      const [accountResult, balanceResult] = await Promise.all([
+      const [accountResult, balanceResult, factorsResult] = await Promise.all([
         supabase
           .from("active_accounts")
           .select("id, name")
@@ -71,6 +77,7 @@ export function AccountDeleteForm({
           .from("account_balances")
           .select("balance::text")
           .eq("id", accountId),
+        listVerifiedTotpFactors(),
       ]);
 
       if (cancelled) return;
@@ -79,6 +86,8 @@ export function AccountDeleteForm({
       setBalance(
         ((balanceResult.data ?? []) as AccountBalance[])[0]?.balance ?? "0",
       );
+      setFactorIds(factorsResult.factors.map((factor) => factor.id));
+      if (factorsResult.error) setError(mfaErrorMessage(factorsResult.error));
       setAccountsLoading(false);
     };
 
@@ -103,13 +112,25 @@ export function AccountDeleteForm({
     });
   }
 
-  async function handleSubmit(e: { preventDefault: () => void }) {
+  async function handleSubmit(e: { preventDefault: () => void; target: any }) {
     e.preventDefault();
 
     if (!ledgerId || !accountId) return;
 
+    const form = e.target;
+    const formData = new FormData(form);
+    const code = formData.get("code")?.toString().trim() ?? "";
+
     setSubmitted(true);
     setError(undefined);
+
+    const mfaError = await verifyMfaCodeAnyFactor(factorIds, code);
+
+    if (mfaError) {
+      setSubmitted(false);
+      setError(mfaErrorMessage(mfaError));
+      return;
+    }
 
     const { error } = await supabase
       .from("deleted_accounts")
@@ -186,21 +207,40 @@ export function AccountDeleteForm({
                     : `This account sits at ${balanceFormat.format(Number(balance))}. Hand that balance to another account first.`}
                 </FieldDescription>
               </Field>
-              {error ? (
-                <Field>
-                  <FieldError>{error}</FieldError>
-                </Field>
-              ) : null}
               {settled ? (
-                <Field>
-                  <Button
-                    type="submit"
-                    variant="destructive"
-                    disabled={submitted}
-                  >
-                    Delete account
-                  </Button>
-                </Field>
+                <>
+                  <Field>
+                    <Input
+                      id="code"
+                      name="code"
+                      type="text"
+                      inputMode="numeric"
+                      autoComplete="one-time-code"
+                      maxLength={6}
+                      placeholder="Enter the six digits from your app"
+                      disabled={!factorIds.length}
+                      required
+                    />
+                    <FieldDescription>
+                      Confirm with your authenticator app before deleting this
+                      account.
+                    </FieldDescription>
+                  </Field>
+                  {error ? (
+                    <Field>
+                      <FieldError>{error}</FieldError>
+                    </Field>
+                  ) : null}
+                  <Field>
+                    <Button
+                      type="submit"
+                      variant="destructive"
+                      disabled={submitted || !factorIds.length}
+                    >
+                      Delete account
+                    </Button>
+                  </Field>
+                </>
               ) : (
                 <>
                   <Field>
