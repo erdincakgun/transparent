@@ -179,11 +179,6 @@ export default function UsersPage() {
                 {user.user_id === currentUserId ? (
                   <>
                     <span className="text-sm text-muted-foreground">You</span>
-                    {/* The last member cannot leave: with `ledgers_users`
-                        empty every policy stops resolving and the ledger
-                        becomes unreachable, which 007 refuses outright. The
-                        button is disabled rather than hidden so the reason is
-                        visible where the action would have been. */}
                     {users.length === 1 ? (
                       <Button
                         variant="outline"
