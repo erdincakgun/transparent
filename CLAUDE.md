@@ -117,11 +117,15 @@ not redundant, it is the mechanism. No trigger does this checking.
 
 | table | insertable columns | notes |
 |---|---|---|
-| `ledgers` | `id, name, description` | client supplies the `id` |
-| `ledgers_users` | `ledger_id, user_id` | plus `delete` |
-| `accounts` | `ledger_id, name, description` | `id` is server-generated |
-| `transactions` | `ledger_id, from_account_id, to_account_id, amount, description` | `id`/`created_at` server-generated |
-| `deleted_accounts` | `account_id, ledger_id` | `deleted_at` server-generated |
+| `ledgers` | `id, name, description` | client supplies the `id`; `created_by` is server-generated |
+| `ledgers_users` | `ledger_id, user_id` | plus `delete`; `added_by`/`added_at` are server-generated |
+| `accounts` | `ledger_id, name, description` | `id`/`created_by` are server-generated |
+| `transactions` | `ledger_id, from_account_id, to_account_id, amount, description` | `id`/`created_at`/`created_by` server-generated |
+| `deleted_accounts` | `account_id, ledger_id` | `deleted_at`/`deleted_by` server-generated |
+
+Every `*_by` column defaults to `auth.uid()` and is excluded from its table's insert grant,
+so a client can never spoof who performed a write (`006_row_attribution.sql`) — the same
+mechanism that already protects `id`, `created_at`, and `deleted_at`.
 
 Sending any other column fails. Amounts are `numeric(20,4)`, must be `> 0`, and the two
 accounts must differ — direction is expressed by which side an account sits on, never by
@@ -293,9 +297,14 @@ viewport wrapping a `*-form` component that holds all logic.
 
 - No generated Supabase types — `supabase.from(...)` is untyped and every row shape is
   hand-declared at the top of the file that reads it. `supabase gen types` would fix this.
-- No row-attribution columns, no member role model, and every list/export silently
-  truncates at PostgREST's `max_rows = 1000`. These are tracked as B1–B5 in the
-  pre-production audit and are being worked through in order.
+- No member role model (every ledger member has equal rights). Tracked as B1–B5 in the
+  pre-production audit and being worked through in order.
+- The four list/export pages (`transactions`, `accounts`, `settle-up`, `users`) page
+  through PostgREST's `max_rows = 1000` via `fetchAllRows` (`src/lib/pagination.ts`)
+  instead of silently truncating, and exports additionally verify an exact count before
+  writing the CSV. The account-picker dropdowns in `transaction-create-form.tsx` and
+  `account-delete-form.tsx` still read `active_accounts` unbounded — lower risk since it
+  only bites a ledger with more than 1,000 accounts, but the same class of bug.
 - There is no MFA settings screen, and deliberately no way to turn MFA off. A user who
   loses their authenticator is locked out: recovery means deleting their factor with
   `auth.admin.mfa.deleteFactor`, which needs a service key, and this repo has none. Adding
