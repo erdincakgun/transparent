@@ -1,6 +1,9 @@
 import { lazy } from "react";
 
 export const LoginPage = lazy(() => import("@/pages/login.tsx"));
+export const LedgerDeletePage = lazy(
+  () => import("@/pages/ledger-delete.tsx"),
+);
 export const LedgerCreatePage = lazy(
   () => import("@/pages/ledger-create.tsx"),
 );
