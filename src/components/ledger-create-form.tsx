@@ -1,9 +1,9 @@
 import { cn } from "@/lib/utils";
-import { LogOutIcon } from "lucide-react";
+import { Copy, CopyCheck, LogOutIcon, ShieldCheckIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldGroup } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import supabase from "@/lib/supabase/client";
 import { useNavigate } from "react-router";
 import { useLedger } from "@/components/ledger-provider";
@@ -16,6 +16,27 @@ export function LedgerCreateForm({
   const { ledgers, refreshLedgers, selectLedger } = useLedger();
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string>();
+  const [userId, setUserId] = useState<string>();
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    supabase.auth.getSession().then(({ data }) => {
+      if (!cancelled) setUserId(data.session?.user.id);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const copyUserId = () => {
+    if (!userId) return;
+
+    navigator.clipboard.writeText(userId);
+    setCopied(true);
+  };
 
   const signOut = () => {
     supabase.auth.signOut();
@@ -94,17 +115,58 @@ export function LedgerCreateForm({
               </Button>
             </Field>
           ) : (
-            <Field>
-              <Button
-                type="button"
-                variant="outline"
-                disabled={submitted}
-                onClick={signOut}
-              >
-                <LogOutIcon />
-                Log out
-              </Button>
-            </Field>
+            <>
+              <Field>
+                <p className="text-center text-sm text-muted-foreground">
+                  Waiting to join someone else's ledger? Send them your user ID
+                  and they can add you.
+                </p>
+              </Field>
+              <Field>
+                <div className="flex items-center gap-2">
+                  <Input
+                    id="user_id"
+                    name="user_id"
+                    type="text"
+                    value={userId ?? ""}
+                    className="font-mono text-xs"
+                    readOnly
+                  />
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    aria-label="Copy user ID"
+                    disabled={!userId}
+                    onClick={copyUserId}
+                  >
+                    {copied ? <CopyCheck /> : <Copy />}
+                  </Button>
+                </div>
+              </Field>
+              <Field>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={submitted}
+                  onClick={() => navigate("/mfa-settings")}
+                >
+                  <ShieldCheckIcon />
+                  Manage two-factor
+                </Button>
+              </Field>
+              <Field>
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={submitted}
+                  onClick={signOut}
+                >
+                  <LogOutIcon />
+                  Log out
+                </Button>
+              </Field>
+            </>
           )}
         </FieldGroup>
       </form>
