@@ -115,7 +115,7 @@ export function MfaSettingsForm({
               type="button"
               variant="destructive"
               size="sm"
-              disabled={factors.length === 1 || removingId === factor.id}
+              disabled={factors.length === 1 || !!removingId}
               onClick={() => handleRemove(factor.id)}
             >
               Remove
