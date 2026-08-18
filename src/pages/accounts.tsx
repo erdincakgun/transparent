@@ -4,10 +4,17 @@ import { DownloadIcon, PlusIcon, Trash2Icon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLedger } from "@/components/ledger-provider";
+import { Actor } from "@/components/actor";
 import { downloadCsv } from "@/lib/csv";
+import { fetchAllRows } from "@/lib/pagination";
 import supabase from "@/lib/supabase/client";
 
-type Account = { id: string; name: string; description: string | null };
+type Account = {
+  id: string;
+  name: string;
+  description: string | null;
+  created_by: string;
+};
 
 type AccountBalance = { id: string; balance: string };
 
@@ -16,12 +23,13 @@ const balanceFormat = new Intl.NumberFormat(undefined, {
   maximumFractionDigits: 4,
 });
 
-const exportColumns = ["id", "ledger_id", "name", "description"];
+const exportColumns = ["id", "ledger_id", "name", "description", "created_by"];
 
 export default function AccountsPage() {
   const { activeLedger, loading: ledgerLoading } = useLedger();
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [balances, setBalances] = useState<Record<string, string>>({});
+  const [currentUserId, setCurrentUserId] = useState<string>();
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState<string>();
@@ -33,20 +41,35 @@ export default function AccountsPage() {
 
     setExporting(true);
 
-    const { data, error } = await supabase
-      .from("active_accounts")
-      .select(exportColumns.join(", "))
-      .eq("ledger_id", ledgerId)
-      .order("name");
+    const [{ data, error }, { count, error: countError }] = await Promise.all([
+      fetchAllRows((from, to) =>
+        supabase
+          .from("active_accounts")
+          .select(exportColumns.join(", "))
+          .eq("ledger_id", ledgerId)
+          .order("name")
+          .order("id", { ascending: true })
+          .range(from, to),
+      ),
+      supabase
+        .from("active_accounts")
+        .select("*", { count: "exact", head: true })
+        .eq("ledger_id", ledgerId),
+    ]);
 
     setExporting(false);
 
-    if (error) {
-      setError(error.message);
+    if (error ?? countError) {
+      setError((error ?? countError)?.message);
       return;
     }
 
-    downloadCsv(`accounts-${ledgerId}.csv`, exportColumns, data ?? []);
+    if (!data || data.length !== count) {
+      setError("Export incomplete — nothing was saved.");
+      return;
+    }
+
+    downloadCsv(`accounts-${ledgerId}.csv`, exportColumns, data);
   }
 
   useEffect(() => {
@@ -65,16 +88,25 @@ export default function AccountsPage() {
       setLoading(true);
       setError(undefined);
 
-      const [accountResult, balanceResult] = await Promise.all([
-        supabase
-          .from("active_accounts")
-          .select("id, name, description")
-          .eq("ledger_id", ledgerId)
-          .order("name"),
-        supabase
-          .from("account_balances")
-          .select("id, balance::text")
-          .eq("ledger_id", ledgerId),
+      const [accountResult, balanceResult, sessionResult] = await Promise.all([
+        fetchAllRows<Account>((from, to) =>
+          supabase
+            .from("active_accounts")
+            .select("id, name, description, created_by")
+            .eq("ledger_id", ledgerId)
+            .order("name")
+            .order("id", { ascending: true })
+            .range(from, to),
+        ),
+        fetchAllRows<AccountBalance>((from, to) =>
+          supabase
+            .from("account_balances")
+            .select("id, balance::text")
+            .eq("ledger_id", ledgerId)
+            .order("id", { ascending: true })
+            .range(from, to),
+        ),
+        supabase.auth.getSession(),
       ]);
 
       if (cancelled) return;
@@ -88,6 +120,7 @@ export default function AccountsPage() {
           ]),
         ),
       );
+      setCurrentUserId(sessionResult.data.session?.user.id);
       setError((accountResult.error ?? balanceResult.error)?.message);
       setLoading(false);
     };
@@ -151,9 +184,18 @@ export default function AccountsPage() {
                 ) : null}
               </div>
               <div className="flex shrink-0 items-center gap-3">
-                <span className="text-sm font-medium tabular-nums">
-                  {balanceFormat.format(Number(balances[account.id] ?? 0))}
-                </span>
+                <div className="flex flex-col items-end gap-0.5">
+                  <span className="text-sm font-medium tabular-nums">
+                    {balanceFormat.format(Number(balances[account.id] ?? 0))}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    opened by{" "}
+                    <Actor
+                      userId={account.created_by}
+                      currentUserId={currentUserId}
+                    />
+                  </span>
+                </div>
                 <Button
                   variant="destructive"
                   size="sm"
