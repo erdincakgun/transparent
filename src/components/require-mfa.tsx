@@ -41,8 +41,6 @@ export function RequireMfa() {
     read();
 
     const { data: subscription } = supabase.auth.onAuthStateChange(() => {
-      // supabase-js holds its session lock for the duration of this callback,
-      // so the re-read has to wait until the callback has returned
       setTimeout(read, 0);
     });
 
