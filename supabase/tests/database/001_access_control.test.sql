@@ -8,7 +8,7 @@
 
 begin;
 create extension if not exists pgtap;
-select plan(16);
+select plan(18);
 
 -- ------------------------------------------------------------- helpers ----
 -- Assertions run as `postgres`; only the query under test runs as the
@@ -62,9 +62,9 @@ insert into public.ledgers (id, name) values ('00000000-0000-4000-f000-000000000
 insert into public.accounts (id, ledger_id, name) values
   ('00000000-0000-4000-f000-0000000000a1', '00000000-0000-4000-f000-00000000000a', 'A'),
   ('00000000-0000-4000-f000-0000000000a2', '00000000-0000-4000-f000-00000000000a', 'B');
-insert into public.transactions (ledger_id, from_account_id, to_account_id, amount, description)
+insert into public.transactions (ledger_id, from_account_id, to_account_id, amount, description, kind)
 values ('00000000-0000-4000-f000-00000000000a', '00000000-0000-4000-f000-0000000000a1',
-        '00000000-0000-4000-f000-0000000000a2', 10, 'fixture');
+        '00000000-0000-4000-f000-0000000000a2', 10, 'fixture', 'accrual');
 
 reset request.jwt.claims;
 
@@ -98,9 +98,9 @@ select is(pg_temp.read_as(pg_temp.svc(), 'select count(*) from public.transactio
           'ERROR:42501', 'service_role cannot read transactions');
 
 select is(pg_temp.exec_as(pg_temp.svc(),
-          'insert into public.transactions (ledger_id, from_account_id, to_account_id, amount, description)
+          'insert into public.transactions (ledger_id, from_account_id, to_account_id, amount, description, kind)
            values (''00000000-0000-4000-f000-00000000000a'', ''00000000-0000-4000-f000-0000000000a1'',
-                   ''00000000-0000-4000-f000-0000000000a2'', 1, ''x'')'),
+                   ''00000000-0000-4000-f000-0000000000a2'', 1, ''x'', ''accrual'')'),
           'ERROR:42501', 'service_role cannot write transactions either');
 
 -- ------------------------------------ signed in but not MFA-challenged ----
@@ -113,6 +113,9 @@ select is(pg_temp.read_as(pg_temp.member_aal1(), 'select count(*) from public.tr
 
 select is(pg_temp.read_as(pg_temp.member_aal1(), 'select count(*) from public.account_balances'),
           '0', 'aal1 member reads zero balances');
+
+select is(pg_temp.read_as(pg_temp.member_aal1(), 'select count(*) from public.account_income_expense'),
+          '0', 'aal1 member reads zero income and expense');
 
 select is(pg_temp.exec_as(pg_temp.member_aal1(),
           'insert into public.ledgers (id, name) values (gen_random_uuid(), ''nope'')'),
@@ -134,6 +137,9 @@ select is(pg_temp.read_as(pg_temp.outsider(), 'select count(*) from public.settl
 
 select is(pg_temp.read_as(pg_temp.outsider(), 'select count(*) from public.active_accounts'),
           '0', 'the active_accounts view inherits RLS');
+
+select is(pg_temp.read_as(pg_temp.outsider(), 'select count(*) from public.account_income_expense'),
+          '0', 'the account_income_expense view inherits RLS');
 
 -- --------------------------------------------------- the member can read ----
 
