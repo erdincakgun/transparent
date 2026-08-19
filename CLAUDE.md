@@ -257,6 +257,20 @@ API, so there is no way to look a person up. The sidebar user menu offers "Copy 
 - **Tailwind v4**, configured entirely in CSS (`src/index.css`) — there is no
   `tailwind.config`. Theme is class-based (`.dark`) via `ThemeProvider`, defaulting to
   dark.
+- **A list row stacks below `sm`.** Every row on the four list pages is
+  `flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-4`, with the
+  identity (account names, user id, description) in a `min-w-0` column and the
+  amount/attribution/buttons in a second block that is `sm:shrink-0` but
+  `justify-between` while stacked. Side by side on a phone the two blocks cannot both
+  fit: the right one is unshrinkable, so the left one collapses and every name renders
+  as `E…`. For the same reason the page toolbars are `flex flex-wrap` with `ml-auto` on
+  the actions rather than `justify-between` — unwrapped, the primary button lands past
+  the right edge and is clipped. Row action buttons carry `max-sm:size-9` (`max-sm:h-9`
+  where they have a label) so a `size="sm"` control is still thumb-sized on a phone.
+  `SidebarInset` gets `min-w-0` in `layouts/dashboard.tsx`: it is a flex item, and its
+  default `min-width: auto` lets one long account name widen the whole layout and scroll
+  the page sideways instead of truncating. Verify a change at **320px**, not just at the
+  `sm` breakpoint — that is where these break first.
 - Auth is **magic-link OTP + Cloudflare Turnstile** (the token goes to
   `signInWithOtp` as `options.captchaToken`), then **TOTP MFA**. One shared Supabase
   client, default export from `src/lib/supabase/client.ts`.
