@@ -7,6 +7,10 @@ function createClient() {
     {
       auth: {
         flowType: "pkce",
+        // Passkey support is experimental and opt-in: without this flag every
+        // `auth.passkey.*` method and `signInWithPasskey`/`registerPasskey`
+        // throws rather than returning an error to translate.
+        experimental: { passkey: true },
       },
     },
   );
