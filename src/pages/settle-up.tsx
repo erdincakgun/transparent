@@ -135,11 +135,18 @@ export default function SettleUpPage() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-2">
-        <p className="text-sm text-muted-foreground">
-          {loading
-            ? "Loading transfers"
-            : `${transfers.length} ${transfers.length === 1 ? "transfer" : "transfers"} to settle up`}
-        </p>
+        <div className="flex min-w-0 flex-col gap-0.5">
+          <p className="text-sm text-muted-foreground">
+            {loading
+              ? "Loading transfers"
+              : `${transfers.length} ${transfers.length === 1 ? "transfer" : "transfers"} to settle up`}
+          </p>
+          {activeLedger?.description ? (
+            <p className="truncate text-xs text-muted-foreground">
+              {activeLedger.description}
+            </p>
+          ) : null}
+        </div>
         <Button
           className="ml-auto"
           variant="outline"
