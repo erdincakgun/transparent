@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
-import { DownloadIcon, PlusIcon, Trash2Icon } from "lucide-react";
+import { DownloadIcon, PencilLine, PlusIcon, Trash2Icon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLedger } from "@/components/ledger-provider";
@@ -196,6 +196,15 @@ export default function AccountsPage() {
                     />
                   </span>
                 </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  aria-label="Edit description"
+                  nativeButton={false}
+                  render={<Link to={`/accounts/describe/${account.id}`} />}
+                >
+                  <PencilLine />
+                </Button>
                 <Button
                   variant="destructive"
                   size="sm"
