@@ -26,7 +26,10 @@ export default function Dashboard() {
   return (
     <SidebarProvider>
       <AppSidebar />
-      <SidebarInset>
+      {/* `min-w-0`: SidebarInset is a flex item, so its default `min-width:
+          auto` lets a long unbreakable account name set the layout's width —
+          the page then scrolls sideways instead of the name truncating. */}
+      <SidebarInset className="min-w-0">
         <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
           <div className="flex items-center gap-2 px-4">
             <SidebarTrigger className="-ml-1 cursor-pointer" />
@@ -36,9 +39,7 @@ export default function Dashboard() {
             />
             <Breadcrumb>
               <BreadcrumbList>
-                <BreadcrumbItem className="hidden md:block">
-                  {pageNames[pathname]}
-                </BreadcrumbItem>
+                <BreadcrumbItem>{pageNames[pathname]}</BreadcrumbItem>
               </BreadcrumbList>
             </Breadcrumb>
           </div>
