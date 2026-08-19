@@ -13,6 +13,7 @@ export const LedgerDescribePage = lazy(
 export const MfaEnrollPage = lazy(() => import("@/pages/mfa-enroll.tsx"));
 export const MfaVerifyPage = lazy(() => import("@/pages/mfa-verify.tsx"));
 export const MfaSettingsPage = lazy(() => import("@/pages/mfa-settings.tsx"));
+export const PasskeysPage = lazy(() => import("@/pages/passkeys.tsx"));
 export const Dashboard = lazy(() => import("@/layouts/dashboard.tsx"));
 export const SettleUpPage = lazy(() => import("@/pages/settle-up.tsx"));
 export const TransactionsPage = lazy(
