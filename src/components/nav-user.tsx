@@ -14,6 +14,7 @@ import supabase from "@/lib/supabase/client";
 import {
   Copy,
   CopyCheck,
+  KeyRoundIcon,
   LogOutIcon,
   MoreHorizontalIcon,
   ShieldCheckIcon,
@@ -84,6 +85,10 @@ export function NavUser({
             <DropdownMenuItem onClick={() => navigate("/mfa-settings")}>
               <ShieldCheckIcon />
               Manage two-factor
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => navigate("/passkeys")}>
+              <KeyRoundIcon />
+              Manage passkeys
             </DropdownMenuItem>
             <DropdownMenuItem onClick={signOut}>
               <LogOutIcon />
