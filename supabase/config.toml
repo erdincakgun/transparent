@@ -185,14 +185,18 @@ minimum_password_length = 6
 password_requirements = ""
 
 # Configure passkey sign-ins.
-# [auth.passkey]
-# enabled = false
+[auth.passkey]
+enabled = true
 
 # Configure WebAuthn relying party settings (required when passkey is enabled).
-# [auth.webauthn]
-# rp_display_name = "Supabase"
-# rp_id = "localhost"
-# rp_origins = ["http://127.0.0.1:3000"]
+# A passkey is bound to the relying party id it was registered against, so changing
+# `rp_id` retires every passkey already enrolled. Every origin must be https or a
+# loopback address, and its hostname must match `rp_id` or be a subdomain of it --
+# which is why `127.0.0.1:5173` is not listed alongside `localhost:5173`.
+[auth.webauthn]
+rp_display_name = "Transparent"
+rp_id = "localhost"
+rp_origins = ["http://localhost:5173"]
 
 [auth.rate_limit]
 # Number of emails that can be sent per hour. Requires auth.email.smtp to be enabled.
