@@ -15,6 +15,7 @@ import {
   MfaEnrollPage,
   MfaVerifyPage,
   MfaSettingsPage,
+  PasskeysPage,
   Dashboard,
   SettleUpPage,
   TransactionsPage,
@@ -51,6 +52,7 @@ createRoot(document.getElementById("root")!).render(
                   path="/mfa-settings"
                   element={withSuspense(MfaSettingsPage)}
                 />
+                <Route path="/passkeys" element={withSuspense(PasskeysPage)} />
                 <Route
                   element={
                     <LedgerProvider>
