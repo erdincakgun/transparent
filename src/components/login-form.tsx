@@ -1,12 +1,19 @@
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Field, FieldError, FieldGroup } from "@/components/ui/field";
+import {
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldSeparator,
+} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { useRef, useState } from "react";
-import { useLocation } from "react-router";
+import { useLocation, useNavigate } from "react-router";
 import { Turnstile, type TurnstileInstance } from "@marsidev/react-turnstile";
+import { KeyRoundIcon } from "lucide-react";
 import supabase from "@/lib/supabase/client";
 import { otpErrorMessage } from "@/lib/supabase/auth";
+import { passkeyErrorMessage, passkeysSupported } from "@/lib/supabase/passkey";
 import { callbackMessage } from "@/lib/supabase/callback";
 
 export function LoginForm({
@@ -14,6 +21,7 @@ export function LoginForm({
   ...props
 }: React.ComponentProps<"div">) {
   const location = useLocation();
+  const navigate = useNavigate();
   const turnstileRef = useRef<TurnstileInstance | undefined>(undefined);
   const [captchaToken, setCaptchaToken] = useState<string | undefined>();
   const [emailSent, setEmailSent] = useState(false);
@@ -24,6 +32,9 @@ export function LoginForm({
         location.search,
     ),
   );
+  // A device fact, not a server rule, so it is read once rather than submitted
+  // into: a browser without WebAuthn is offered the email path alone.
+  const [passkeyOffered] = useState(passkeysSupported);
 
   async function handleSubmit(e: { preventDefault: () => void; target: any }) {
     e.preventDefault();
@@ -53,6 +64,34 @@ export function LoginForm({
     }
 
     setEmailSent(true);
+  }
+
+  /**
+   * A passkey replaces the magic link, not the authenticator app: the session
+   * it mints is `aal1`, so `RequireMfa` still sends it to `/mfa-verify` and the
+   * database still refuses every row until a code has been entered. What it
+   * saves is the round trip through the inbox.
+   */
+  async function handlePasskey() {
+    setSubmitted(true);
+    setError(undefined);
+
+    const { error } = await supabase.auth.signInWithPasskey({
+      options: { captchaToken },
+    });
+
+    // The challenge spends the Turnstile token whether or not the ceremony that
+    // follows it succeeds, so the widget is reset either way.
+    turnstileRef.current?.reset();
+    setCaptchaToken(undefined);
+
+    if (error) {
+      setSubmitted(false);
+      setError(passkeyErrorMessage(error));
+      return;
+    }
+
+    navigate("/", { replace: true });
   }
 
   return (
@@ -88,6 +127,22 @@ export function LoginForm({
                   Login
                 </Button>
               </Field>
+              {passkeyOffered ? (
+                <>
+                  <FieldSeparator>or</FieldSeparator>
+                  <Field>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      disabled={submitted || !captchaToken}
+                      onClick={handlePasskey}
+                    >
+                      <KeyRoundIcon />
+                      Use a passkey
+                    </Button>
+                  </Field>
+                </>
+              ) : null}
               <Turnstile
                 ref={turnstileRef}
                 siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
