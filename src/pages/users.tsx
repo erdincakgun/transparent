@@ -118,7 +118,7 @@ export default function UsersPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <div className="flex min-w-0 flex-col gap-0.5">
           <p className="text-sm text-muted-foreground">
             {loading
@@ -137,7 +137,7 @@ export default function UsersPage() {
             </p>
           ) : null}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="ml-auto flex flex-wrap items-center gap-2">
           <Button
             variant="outline"
             disabled={exporting || !ledgerId}
@@ -168,7 +168,7 @@ export default function UsersPage() {
           {users.map((user) => (
             <div
               key={user.user_id}
-              className="flex items-center justify-between gap-4 px-4 py-3"
+              className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
             >
               <div className="flex min-w-0 flex-col gap-0.5">
                 <span className="truncate text-sm font-medium">
@@ -180,7 +180,7 @@ export default function UsersPage() {
                   · {dateFormat.format(new Date(user.added_at))}
                 </span>
               </div>
-              <div className="flex shrink-0 items-center gap-3">
+              <div className="flex items-center justify-end gap-3 sm:shrink-0">
                 {user.user_id === currentUserId ? (
                   <>
                     <span className="text-sm text-muted-foreground">You</span>
@@ -188,6 +188,7 @@ export default function UsersPage() {
                       <Button
                         variant="outline"
                         size="sm"
+                        className="max-sm:h-9"
                         disabled
                         title="A ledger has to keep at least one member"
                       >
@@ -198,6 +199,7 @@ export default function UsersPage() {
                       <Button
                         variant="destructive"
                         size="sm"
+                        className="max-sm:h-9"
                         nativeButton={false}
                         render={<Link to={`/users/delete/${user.user_id}`} />}
                       >
@@ -210,6 +212,7 @@ export default function UsersPage() {
                   <Button
                     variant="destructive"
                     size="sm"
+                    className="max-sm:h-9"
                     nativeButton={false}
                     render={<Link to={`/users/delete/${user.user_id}`} />}
                   >
