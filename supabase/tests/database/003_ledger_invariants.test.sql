@@ -4,7 +4,7 @@
 
 begin;
 create extension if not exists pgtap;
-select plan(30);
+select plan(34);
 
 create function pg_temp.exec_as(claims text, statement text)
 returns text language plpgsql as $$
@@ -147,6 +147,30 @@ select is((select count(*)::text from public.active_accounts
             where ledger_id = '00000000-0000-4000-f000-00000000002a'),
           '5', 'active_accounts hides the retired one');
 
+-- ------------------------------------------------ reusing a freed name ----
+-- The retired row keeps its name in the history it took part in; what
+-- retirement releases is the claim on that name for accounts opened later.
+
+select is(pg_temp.exec_as(pg_temp.owner(),
+          'insert into public.accounts (ledger_id, name) values
+           (''00000000-0000-4000-f000-00000000002a'', ''settled'')'),
+          'OK', 'a retired account frees its name, case-insensitively like the index it replaced');
+
+select is((select count(*)::text from public.accounts
+            where ledger_id = '00000000-0000-4000-f000-00000000002a'
+              and lower(name) = 'settled'),
+          '2', 'the retired row keeps its name -- the replacement is a second account, not a rename');
+
+select is((select count(*)::text from public.active_accounts
+            where ledger_id = '00000000-0000-4000-f000-00000000002a'
+              and lower(name) = 'settled'),
+          '1', 'only one of the two is active, so the name still names one account today');
+
+select is(pg_temp.exec_as(pg_temp.owner(),
+          'insert into public.accounts (ledger_id, name) values
+           (''00000000-0000-4000-f000-00000000002a'', ''SETTLED'')'),
+          'ERROR:23505', 'and the replacement holds the name in its turn');
+
 -- ------------------------------------------------------------- balances ----
 
 select is((select balance from public.account_balances where id = '00000000-0000-4000-f000-0000000000c1'),
@@ -172,7 +196,7 @@ select is(
      where b.ledger_id = '00000000-0000-4000-f000-00000000002a'
    ) r),
   0::numeric,
-  'applying every settlement transfer leaves all five balances at zero');
+  'applying every settlement transfer leaves every balance in L1 at zero');
 
 select is(
   (select count(*)::text from public.settlement_transfers
