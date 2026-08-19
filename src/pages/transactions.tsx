@@ -11,21 +11,14 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLedger } from "@/components/ledger-provider";
 import { Actor } from "@/components/actor";
+import {
+  TransactionDetailsDialog,
+  type Transaction,
+} from "@/components/transaction-details-dialog";
 import { downloadCsv } from "@/lib/csv";
 import { fetchAllRows } from "@/lib/pagination";
 import { trimAmount } from "@/lib/utils";
 import supabase from "@/lib/supabase/client";
-
-type Transaction = {
-  id: string;
-  created_at: string;
-  from_account_id: string;
-  to_account_id: string;
-  amount: string;
-  description: string;
-  kind: "accrual" | "payment";
-  created_by: string;
-};
 
 const amountFormat = new Intl.NumberFormat(undefined, {
   minimumFractionDigits: 2,
@@ -197,12 +190,18 @@ export default function TransactionsPage() {
           ))}
         </div>
       ) : transactions.length ? (
-        <div className="divide-y rounded-lg border">
+        <div className="divide-y overflow-hidden rounded-lg border">
           {transactions.map((transaction) => (
             <div
               key={transaction.id}
-              className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
+              className="relative flex flex-col gap-2 px-4 py-3 transition-colors hover:bg-muted/50 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
             >
+              <TransactionDetailsDialog
+                transaction={transaction}
+                fromName={accountNames[transaction.from_account_id]}
+                toName={accountNames[transaction.to_account_id]}
+                currentUserId={currentUserId}
+              />
               <div className="flex min-w-0 flex-col gap-0.5">
                 <div className="flex min-w-0 items-center gap-1.5 text-sm font-medium">
                   <span className="truncate">
@@ -235,7 +234,7 @@ export default function TransactionsPage() {
                     />
                   </span>
                 </div>
-                <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+                <div className="relative z-20 flex shrink-0 items-center gap-2 sm:gap-3">
                   <Button
                     variant="outline"
                     size="sm"
