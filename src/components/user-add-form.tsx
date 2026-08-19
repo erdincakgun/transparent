@@ -107,6 +107,11 @@ export function UserAddForm({
                         <span className="truncate font-medium">
                           {ledger.name}
                         </span>
+                        {ledger.description ? (
+                          <span className="truncate text-xs text-muted-foreground">
+                            {ledger.description}
+                          </span>
+                        ) : null}
                         <span className="truncate text-xs text-muted-foreground">
                           {ledger.id}
                         </span>
@@ -122,6 +127,11 @@ export function UserAddForm({
                       <span className="truncate font-medium">
                         {ledger.name}
                       </span>
+                      {ledger.description ? (
+                        <span className="truncate text-xs text-muted-foreground">
+                          {ledger.description}
+                        </span>
+                      ) : null}
                       <span className="truncate text-xs text-muted-foreground">
                         {ledger.id}
                       </span>
