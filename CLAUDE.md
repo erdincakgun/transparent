@@ -30,7 +30,9 @@ and no component tests. Each file builds its own fixture inside a transaction an
 back, so the suites are order-independent and do not read `seed.sql`. They assert the
 things that must never regress — anon and `service_role` reach nothing, `aal1` reads zero
 rows, a non-member reads zero rows through tables *and* views, append-only holds at both
-the grant layer and the trigger layer, and the settlement plan zeroes every balance.
+the grant layer and the trigger layer, the settlement plan zeroes every balance, and a
+payment moves a balance without touching income or expense
+(`006_transaction_kinds.test.sql`).
 **Any change to a policy, grant or trigger must leave `yarn test` green**; if a change
 makes a test fail, the change is wrong until proven otherwise.
 
@@ -46,8 +48,9 @@ available; its scratch output lands in the gitignored `.playwright-mcp/`). A pos
 server is also wired up for querying the local database directly.
 
 `supabase/seed.sql` gives `db reset` a working fixture: four users
-(`*@transparent.test`), two ledgers with overlapping membership, a retired account and an
-unsettled one. Every user gets a verified TOTP factor built from the shared dev secret
+(`*@transparent.test`), two ledgers with overlapping membership, a retired account, an
+unsettled one, and a mix of accruals and payments in both ledgers so the two views read
+differently. Every user gets a verified TOTP factor built from the shared dev secret
 `JBSWY3DPEHPK3PXP` — without a factor a seeded user cannot reach `aal2`, and without
 `aal2` they read nothing, which would make the fixture invisible in the app it seeds.
 
@@ -86,8 +89,22 @@ closed: no claims at all is not `aal2`. Any new policy must carry the check too.
 `restrict_violation` on `ledgers`, `accounts`, `transactions` and `deleted_accounts`;
 truncate is blocked on all five. The only permitted mutation besides insert is `delete`
 on `ledgers_users` (removing a member). **A wrong transaction is corrected with a
-storno** — a second, opposite transaction referencing the original in its description.
+storno** — a second, opposite transaction referencing the original in its description,
+carrying the same `kind` so it cancels the original in both views rather than only one.
 Never reach for an `UPDATE`; it will not fail silently, it will throw.
+
+**A transaction is an accrual or a payment, and it must say which.**
+`012_transaction_kinds.sql` adds the enum `public.transaction_kind` and a `not null`
+`kind` column. An **accrual** is a cost one account covered for another; a **payment**
+only settles a balance an earlier accrual created. Both move money identically, so
+`account_balances` counts both and **a ledger still sums to zero** — that arithmetic was
+deliberately left untouched. What reads only the accruals is
+`public.account_income_expense` (below). The column was added with `default 'payment'`,
+which is what backfilled the rows that predate it, and the default was then dropped in
+the same migration: an insert that omits `kind` raises `not_null_violation` (23502)
+rather than being filed as a payment by inattention. The type carries the usual explicit
+`revoke usage … from public` + `grant usage … to authenticated`, like every other object
+here.
 
 **Deleting an account is an insert too.** `public.deleted_accounts`
 (`003_deleted_accounts.sql`) carries `(account_id, ledger_id)` with the same composite
@@ -157,7 +174,7 @@ not redundant, it is the mechanism. No trigger does this checking.
 | `ledgers` | `id, name, description` | client supplies the `id`; `created_by` is server-generated |
 | `ledgers_users` | `ledger_id, user_id` | plus `delete`; `added_by`/`added_at` are server-generated |
 | `accounts` | `ledger_id, name, description` | `id`/`created_by` are server-generated |
-| `transactions` | `ledger_id, from_account_id, to_account_id, amount, description` | `id`/`created_at`/`created_by` server-generated |
+| `transactions` | `ledger_id, from_account_id, to_account_id, amount, description, kind` | `id`/`created_at`/`created_by` server-generated; `kind` has no default, so it must be sent |
 | `deleted_accounts` | `account_id, ledger_id` | `deleted_at`/`deleted_by` server-generated |
 | `ledger_descriptions` | `ledger_id, description` | `id`/`created_at`/`created_by` server-generated |
 | `account_descriptions` | `account_id, ledger_id, description` | `id`/`created_at`/`created_by` server-generated |
@@ -190,6 +207,13 @@ that pattern.
 - `public.account_balances` (`001_account_balances.sql`) → `id, ledger_id, balance`, as
   *credits in minus debits out*. A **positive** balance means the account has received
   more than it sent, so in settle-up terms it is the one that **pays**.
+- `public.account_income_expense` (`012_transaction_kinds.sql`) → `id, ledger_id,
+  income, expense`, the same shape of subquery as `account_balances` but summing
+  **accruals only**: `income` is every accrual the account sat on the `to` side of,
+  `expense` every one it sat on the `from` side of. A payment never appears here — it
+  zeroes the balance its accrual created and leaves the two figures alone. Like
+  `account_balances` it is over `accounts`, not `active_accounts`, so a retired account
+  keeps the history it took part in.
 - `public.settlement_transfers` (`002_settlement_transfers.sql`) → `ledger_id,
   from_account_id, to_account_id, amount`, the minimal set of transfers that zeroes every
   balance. It first matches exact opposite pairs (`+50` against `−50`), then greedily
@@ -450,11 +474,14 @@ page. The same `exportColumns` array is both the PostgREST select list and the C
 `amount`.
 
 **Transaction prefill travels through the query string.** `/transaction-create` reads
-`from`, `to`, `amount`, `description` search params; the duplicate and revert buttons on
-the transactions page, the play button on settle-up and the hand-over button on the
-account delete form all build such links. The form drops any prefilled account id that is
-not in the active ledger's accounts. Revert is how the storno rule surfaces in the UI:
-same amount, accounts swapped, description prefixed `revert:`.
+`from`, `to`, `amount`, `description`, `kind` search params; the duplicate and revert
+buttons on the transactions page, the play button on settle-up and the hand-over button
+on the account delete form all build such links. The form drops any prefilled account id
+that is not in the active ledger's accounts, and reads anything but `kind=payment` as
+`accrual`, which is also what the selector starts on. Duplicate and revert both carry the
+source row's kind — a storno that changed kind would cancel the balance but not the
+income. Settle-up and hand-over both send `kind=payment`: neither records new economic
+activity, they only clear a balance.
 
 **Editing a description is a form that appends.** `/ledgers/describe/:ledgerId` and
 `/accounts/describe/:accountId` (`ledger-describe-form.tsx`, `account-describe-form.tsx`,
