@@ -16,6 +16,20 @@ import { Link, useNavigate, useSearchParams } from "react-router";
 import { useLedger } from "@/components/ledger-provider";
 
 type Account = { id: string; name: string };
+type Kind = "accrual" | "payment";
+
+const kinds: { value: Kind; label: string; hint: string }[] = [
+  {
+    value: "accrual",
+    label: "Accrual",
+    hint: "a cost one account covered for another",
+  },
+  {
+    value: "payment",
+    label: "Payment",
+    hint: "settling a balance an accrual created",
+  },
+];
 
 export function TransactionCreateForm({
   className,
@@ -28,6 +42,7 @@ export function TransactionCreateForm({
   const [accountsLoading, setAccountsLoading] = useState(true);
   const [fromAccountId, setFromAccountId] = useState<string | null>(null);
   const [toAccountId, setToAccountId] = useState<string | null>(null);
+  const [kind, setKind] = useState<Kind>("accrual");
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState<string>();
 
@@ -36,6 +51,8 @@ export function TransactionCreateForm({
   const prefillTo = searchParams.get("to");
   const prefillAmount = searchParams.get("amount") ?? "";
   const prefillDescription = searchParams.get("description") ?? "";
+  const prefillKind: Kind =
+    searchParams.get("kind") === "payment" ? "payment" : "accrual";
 
   useEffect(() => {
     if (loading) return;
@@ -66,6 +83,7 @@ export function TransactionCreateForm({
       setAccounts(loaded);
       setFromAccountId(inLedger(prefillFrom));
       setToAccountId(inLedger(prefillTo));
+      setKind(prefillKind);
       setAccountsLoading(false);
     };
 
@@ -74,7 +92,7 @@ export function TransactionCreateForm({
     return () => {
       cancelled = true;
     };
-  }, [loading, ledgerId, prefillFrom, prefillTo]);
+  }, [loading, ledgerId, prefillFrom, prefillTo, prefillKind]);
 
   async function handleSubmit(e: { preventDefault: () => void; target: any }) {
     e.preventDefault();
@@ -95,6 +113,7 @@ export function TransactionCreateForm({
       to_account_id: toAccountId,
       amount,
       description,
+      kind,
     });
 
     if (error) {
@@ -263,6 +282,51 @@ export function TransactionCreateForm({
                     <ArrowUpDown />
                   </Button>
                 </div>
+              </Field>
+              <Field>
+                <Select
+                  value={kind}
+                  onValueChange={(value: Kind | null) => {
+                    if (value) setKind(value);
+                  }}
+                >
+                  <SelectTrigger className="w-full data-[size=default]:h-auto">
+                    <SelectValue>
+                      {(value: Kind | null) => {
+                        const selected = kinds.find(
+                          (item) => item.value === value,
+                        );
+
+                        if (!selected) return "Select a kind";
+
+                        return (
+                          <div className="grid flex-1 text-left leading-tight">
+                            <span className="truncate font-medium">
+                              {selected.label}
+                            </span>
+                            <span className="truncate text-xs text-muted-foreground">
+                              {selected.hint}
+                            </span>
+                          </div>
+                        );
+                      }}
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent>
+                    {kinds.map((item) => (
+                      <SelectItem key={item.value} value={item.value}>
+                        <div className="grid flex-1 text-left leading-tight">
+                          <span className="truncate font-medium">
+                            {item.label}
+                          </span>
+                          <span className="truncate text-xs text-muted-foreground">
+                            {item.hint}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </Field>
               <Field>
                 <Input
