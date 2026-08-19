@@ -118,6 +118,11 @@ export function LedgerDeleteForm({
           <Field>
             <div className="flex w-full flex-col rounded-lg border border-input bg-transparent px-2.5 py-2 text-left text-sm leading-tight dark:bg-input/30">
               <span className="truncate font-medium">{ledger.name}</span>
+              {ledger.description ? (
+                <span className="truncate text-xs text-muted-foreground">
+                  {ledger.description}
+                </span>
+              ) : null}
               <span className="truncate text-xs text-muted-foreground">
                 {ledger.id}
               </span>
