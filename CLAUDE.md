@@ -364,6 +364,24 @@ The database contract is untouched by any of this: no migration, no policy, no g
 `yarn test` is unaffected because passkeys live in `auth.webauthn_credentials`, which
 GoTrue owns and the API never exposes.
 
+**What an `aal1` passkey session can actually reach**, measured against a live `aal2`
+session for the same user rather than assumed: all seven tables and all four views return
+**zero rows**, every insert is refused `42501`, and the one permitted mutation — `delete`
+on `ledgers_users` — matches nothing, which PostgREST reports as `204` and no rows
+removed, not as an error. Two things on the *auth* surface are nonetheless possible at
+`aal1`, both GoTrue's rules rather than ours and neither touching ledger data:
+
+- A session can **list its own passkeys** (ids, friendly names, dates). It cannot add or
+  remove one — both answer `insufficient_aal`. Nothing in this app calls `list()` at
+  `aal1`, since `/passkeys` sits behind `RequireMfa`.
+- A user who has **not yet enrolled a TOTP factor** may register a passkey at `aal1`:
+  GoTrue's rule is "`AAL2` is required to manage passkeys *when MFA is enabled*", and
+  MFA is only "enabled" for a user once they hold a verified factor. This app never
+  offers that — a factor-less session is at `/mfa-enroll` — and it grants nothing, because
+  such a session still reads zero rows and still cannot insert a first ledger. Registering
+  a passkey has always required *some* session (no JWT answers `bad_jwt`), so a passkey
+  can never precede a first email sign-in.
+
 Sign-in is `signInWithPasskey()` from `login-form.tsx`, sitting under an "or" separator
 beside the email field. Two things it needs that the email path already had:
 
