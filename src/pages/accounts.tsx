@@ -134,13 +134,13 @@ export default function AccountsPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <p className="text-sm text-muted-foreground">
           {loading
             ? "Loading accounts"
             : `${accounts.length} ${accounts.length === 1 ? "account" : "accounts"}`}
         </p>
-        <div className="flex items-center gap-2">
+        <div className="ml-auto flex flex-wrap items-center gap-2">
           <Button
             variant="outline"
             disabled={exporting || !ledgerId}
@@ -171,7 +171,7 @@ export default function AccountsPage() {
           {accounts.map((account) => (
             <div
               key={account.id}
-              className="flex items-center justify-between gap-4 px-4 py-3"
+              className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
             >
               <div className="flex min-w-0 flex-col gap-0.5">
                 <span className="truncate text-sm font-medium">
@@ -183,12 +183,12 @@ export default function AccountsPage() {
                   </span>
                 ) : null}
               </div>
-              <div className="flex shrink-0 items-center gap-3">
-                <div className="flex flex-col items-end gap-0.5">
+              <div className="flex items-center justify-between gap-3 sm:shrink-0">
+                <div className="flex min-w-0 flex-col gap-0.5 sm:items-end">
                   <span className="text-sm font-medium tabular-nums">
                     {balanceFormat.format(Number(balances[account.id] ?? 0))}
                   </span>
-                  <span className="text-xs text-muted-foreground">
+                  <span className="truncate text-xs text-muted-foreground">
                     opened by{" "}
                     <Actor
                       userId={account.created_by}
@@ -196,24 +196,28 @@ export default function AccountsPage() {
                     />
                   </span>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  aria-label="Edit description"
-                  nativeButton={false}
-                  render={<Link to={`/accounts/describe/${account.id}`} />}
-                >
-                  <PencilLine />
-                </Button>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  aria-label="Delete account"
-                  nativeButton={false}
-                  render={<Link to={`/accounts/delete/${account.id}`} />}
-                >
-                  <Trash2Icon />
-                </Button>
+                <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="max-sm:size-9"
+                    aria-label="Edit description"
+                    nativeButton={false}
+                    render={<Link to={`/accounts/describe/${account.id}`} />}
+                  >
+                    <PencilLine />
+                  </Button>
+                  <Button
+                    variant="destructive"
+                    size="sm"
+                    className="max-sm:size-9"
+                    aria-label="Delete account"
+                    nativeButton={false}
+                    render={<Link to={`/accounts/delete/${account.id}`} />}
+                  >
+                    <Trash2Icon />
+                  </Button>
+                </div>
               </div>
             </div>
           ))}
