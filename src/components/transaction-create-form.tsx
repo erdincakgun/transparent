@@ -175,6 +175,11 @@ export function TransactionCreateForm({
                         <span className="truncate font-medium">
                           {ledger.name}
                         </span>
+                        {ledger.description ? (
+                          <span className="truncate text-xs text-muted-foreground">
+                            {ledger.description}
+                          </span>
+                        ) : null}
                         <span className="truncate text-xs text-muted-foreground">
                           {ledger.id}
                         </span>
@@ -190,6 +195,11 @@ export function TransactionCreateForm({
                       <span className="truncate font-medium">
                         {ledger.name}
                       </span>
+                      {ledger.description ? (
+                        <span className="truncate text-xs text-muted-foreground">
+                          {ledger.description}
+                        </span>
+                      ) : null}
                       <span className="truncate text-xs text-muted-foreground">
                         {ledger.id}
                       </span>
