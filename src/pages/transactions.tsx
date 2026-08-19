@@ -23,6 +23,7 @@ type Transaction = {
   to_account_id: string;
   amount: string;
   description: string;
+  kind: "accrual" | "payment";
   created_by: string;
 };
 
@@ -45,6 +46,7 @@ const exportColumns = [
   "to_account_id",
   "amount::text",
   "description",
+  "kind",
   "created_by",
 ];
 
@@ -116,7 +118,7 @@ export default function TransactionsPage() {
             supabase
               .from("transactions")
               .select(
-                "id, created_at, from_account_id, to_account_id, amount::text, description, created_by",
+                "id, created_at, from_account_id, to_account_id, amount::text, description, kind, created_by",
               )
               .eq("ledger_id", ledgerId)
               .order("created_at", { ascending: false })
@@ -211,9 +213,14 @@ export default function TransactionsPage() {
                     {accountNames[transaction.to_account_id]}
                   </span>
                 </div>
-                <span className="truncate text-sm text-muted-foreground">
-                  {transaction.description}
-                </span>
+                <div className="flex min-w-0 items-center gap-1.5">
+                  <span className="shrink-0 rounded-sm border px-1.5 text-xs text-muted-foreground">
+                    {transaction.kind}
+                  </span>
+                  <span className="truncate text-sm text-muted-foreground">
+                    {transaction.description}
+                  </span>
+                </div>
               </div>
               <div className="flex items-center justify-between gap-3 sm:shrink-0">
                 <div className="flex min-w-0 flex-col gap-0.5 sm:items-end">
@@ -244,6 +251,7 @@ export default function TransactionsPage() {
                             to: transaction.to_account_id,
                             amount: trimAmount(transaction.amount),
                             description: transaction.description,
+                            kind: transaction.kind,
                           }).toString(),
                         }}
                       />
@@ -266,6 +274,7 @@ export default function TransactionsPage() {
                             to: transaction.from_account_id,
                             amount: trimAmount(transaction.amount),
                             description: `revert: ${transaction.description} (${dateFormat.format(new Date(transaction.created_at))})`,
+                            kind: transaction.kind,
                           }).toString(),
                         }}
                       />
