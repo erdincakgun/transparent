@@ -125,6 +125,11 @@ export default function UsersPage() {
               ? "Loading users"
               : `${users.length} ${users.length === 1 ? "user" : "users"}`}
           </p>
+          {activeLedger?.description ? (
+            <p className="truncate text-xs text-muted-foreground">
+              {activeLedger.description}
+            </p>
+          ) : null}
           {ledgerCreatedBy ? (
             <p className="text-xs text-muted-foreground">
               Ledger created by{" "}
