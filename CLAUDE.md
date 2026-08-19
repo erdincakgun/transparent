@@ -123,6 +123,27 @@ nothing yet to lock. The retired row keeps its own name forever, so its history 
 readable; a ledger that has reused a name shows two accounts under it on the transactions
 and settle-up pages, told apart only by id.
 
+**Rewriting a description is an insert too.** `description` on `ledgers` and `accounts` is
+append-only like every other column, so a correction cannot overwrite it — it is appended.
+`public.ledger_descriptions` and `public.account_descriptions` (`011_descriptions.sql`)
+hold every description a row has ever been given; the newest wins, and the base table's
+own `description` is the first entry under another name — so nothing is lost and the whole
+history stays readable with the actor who wrote each line. `active_ledgers` and
+`active_accounts` resolve which one is current, which is why **anything showing a
+description reads the view, never the base table**: the base row still holds the wording it
+was created with, forever. A rewrite to `null` clears the description the way omitting it
+at creation does, and the views test `latest.id is null` rather than reaching for
+`coalesce`, which would resurrect the original in place of a deliberate clearing. Both
+tables key on a `bigint generated always as identity` instead of the uuid used everywhere
+else, because here the key is also the answer to *which one is newest*: two rewrites inside
+one transaction share a `now()`, and that would leave the question to a coin toss between
+two random uuids. `account_descriptions` carries the same composite
+`(account_id, ledger_id)` foreign key as `transactions`, and the trigger
+`account_descriptions_reject_deleted_account` raises `restrict_violation` (`23001`) for an
+account already in `deleted_accounts` — locking the `accounts` row `for share` exactly as
+the transaction trigger does — so **a retired account keeps the description it died with**.
+Archiving a ledger freezes nothing, so a ledger's description stays rewritable.
+
 **Cross-ledger transactions are impossible by construction.** `accounts` carries a
 `unique (id, ledger_id)` and `transactions` has two *composite* foreign keys
 `(from_account_id, ledger_id)` and `(to_account_id, ledger_id)`. This is why every
@@ -138,6 +159,8 @@ not redundant, it is the mechanism. No trigger does this checking.
 | `accounts` | `ledger_id, name, description` | `id`/`created_by` are server-generated |
 | `transactions` | `ledger_id, from_account_id, to_account_id, amount, description` | `id`/`created_at`/`created_by` server-generated |
 | `deleted_accounts` | `account_id, ledger_id` | `deleted_at`/`deleted_by` server-generated |
+| `ledger_descriptions` | `ledger_id, description` | `id`/`created_at`/`created_by` server-generated |
+| `account_descriptions` | `account_id, ledger_id, description` | `id`/`created_at`/`created_by` server-generated |
 
 Every `*_by` column defaults to `auth.uid()` and is excluded from its table's insert grant,
 so a client can never spoof who performed a write (`006_row_attribution.sql`) — the same
@@ -157,7 +180,7 @@ cannot pass the SELECT policy — so the established pattern is: generate the id
 hold (`src/components/ledger-create-form.tsx`). Inserts into `accounts` and
 `transactions` have no such problem; membership already exists there.
 
-**Derived numbers are views, never stored columns.** Three exist, all
+**Derived numbers are views, never stored columns.** They are all
 `security_invoker = true` so the caller's RLS on the underlying tables applies and none
 needs a policy of its own — but each still needs the explicit
 `revoke all … from anon, authenticated, service_role` + `grant select … to authenticated`,
@@ -172,9 +195,16 @@ that pattern.
   balance. It first matches exact opposite pairs (`+50` against `−50`), then greedily
   matches the remainder by overlapping running-sum intervals. It is pure SQL over
   `account_balances` — do not reimplement any of this arithmetic in the client.
+- `public.active_ledgers` (`009_deleted_ledgers.sql`, description resolved by
+  `011_descriptions.sql`) → `id, name, description, created_by, created_at`, every ledger
+  with no `deleted_ledgers` row, its `description` the newest entry in
+  `ledger_descriptions` or the ledger's own if it has never been rewritten.
+  `LedgerProvider` reads this, not `ledgers`.
 - `public.active_accounts` (`004_active_accounts.sql`, widened by
-  `006_row_attribution.sql`) → `id, ledger_id, name, description, created_by`, every
-  account with no `deleted_accounts` row. **Anything that offers an
+  `006_row_attribution.sql` and `008_created_at.sql`, description resolved by
+  `011_descriptions.sql`) → `id, ledger_id, name, description, created_by, created_at`,
+  every account with no `deleted_accounts` row, its `description` resolved from
+  `account_descriptions` the same way. **Anything that offers an
   account to pick reads this, not `accounts`** — the accounts list and its CSV export,
   both transaction selects, the heir select on the delete form. Name lookups on the
   transactions and settle-up pages still read `accounts`, because a retired account keeps
@@ -192,8 +222,9 @@ API, so there is no way to look a person up. The sidebar user menu offers "Copy 
   `RequireAuth` (subscribes to `onAuthStateChange`) → `RequireMfa` → `LedgerProvider` →
   either `Dashboard` (`src/layouts/dashboard.tsx`, sidebar+header layout with an
   `<Outlet />`, holding `/` → Settle Up, `/transactions`, `/accounts`, `/users`) or the
-  standalone full-screen routes that sit beside it (`/ledger-create`, `/account-create`,
-  `/accounts/delete/:accountId`, `/transaction-create`, `/user-add`,
+  standalone full-screen routes that sit beside it (`/ledger-create`,
+  `/ledgers/describe/:ledgerId`, `/account-create`, `/accounts/delete/:accountId`,
+  `/accounts/describe/:accountId`, `/transaction-create`, `/user-add`,
   `/users/delete/:userId`). Anything needing `useLedger` must sit inside the provider.
   `/mfa-enroll` and `/mfa-verify` are the only routes between `RequireAuth` and
   `RequireMfa` — they need a session but cannot need `aal2`, because reaching `aal2` is
@@ -308,6 +339,7 @@ error into copy** rather than pre-checking. The vocabulary in use:
 | `error.code === "22P02"` | the pasted user id is not a uuid |
 | `"transactions_distinct_accounts"` in the message | pick two different accounts |
 | `error.code === "23001"` | the account still has a balance / the account is deleted |
+| `error.code === "23514"` | a description longer than the column allows |
 
 Follow that pattern for new constraints instead of adding client-side guards. **A delete
 blocked by RLS is not an error**, it is zero rows — `user-delete-form.tsx` therefore uses
@@ -342,6 +374,20 @@ the transactions page, the play button on settle-up and the hand-over button on 
 account delete form all build such links. The form drops any prefilled account id that is
 not in the active ledger's accounts. Revert is how the storno rule surfaces in the UI:
 same amount, accounts swapped, description prefixed `revert:`.
+
+**Editing a description is a form that appends.** `/ledgers/describe/:ledgerId` and
+`/accounts/describe/:accountId` (`ledger-describe-form.tsx`, `account-describe-form.tsx`,
+reached from "Edit description" in the ledger switcher and the pencil on each accounts
+row) read the current description from the view, the original from the base row and every
+rewrite from the log, then render the lot through `DescriptionHistory`
+(`components/description-history.tsx`) newest-first with `Actor` and a timestamp — the
+point of an append-only description is that the old one is still there to read. Saving
+inserts one row; an empty field inserts `null`, which reads as "no description" in the
+history. Neither form takes the value it puts in the input from `useLedger()`: the ledger
+form calls `refreshLedgers()` after a successful save so the sidebar and the users page
+catch up, and that would move an uncontrolled input's `defaultValue` out from under it
+while it is still mounted, which Base UI warns about. Both therefore fetch their own
+current value and gate the input on that load.
 
 **Deleting an account is a two-step flow** (`account-delete-form.tsx`). It loads the
 account's balance alongside the ledger's `active_accounts`; at zero it offers the delete
