@@ -228,7 +228,9 @@ API, so there is no way to look a person up. The sidebar user menu offers "Copy 
   `/users/delete/:userId`). Anything needing `useLedger` must sit inside the provider.
   `/mfa-enroll` and `/mfa-verify` are the only routes between `RequireAuth` and
   `RequireMfa` — they need a session but cannot need `aal2`, because reaching `aal2` is
-  what they are for.
+  what they are for. `/mfa-settings` and `/passkeys` sit just inside `RequireMfa` and
+  outside `LedgerProvider`: both manage credentials rather than ledger data, and GoTrue
+  refuses either at `aal1`.
 - Adding a dashboard route means touching **four** places: the lazy import in
   `src/lazy-pages.tsx`, the `<Route>` in `main.tsx`, the breadcrumb `pageNames` map in
   `layouts/dashboard.tsx`, and `data.navItems` in `components/app-sidebar.tsx`.
@@ -271,9 +273,10 @@ API, so there is no way to look a person up. The sidebar user menu offers "Copy 
   default `min-width: auto` lets one long account name widen the whole layout and scroll
   the page sideways instead of truncating. Verify a change at **320px**, not just at the
   `sm` breakpoint — that is where these break first.
-- Auth is **magic-link OTP + Cloudflare Turnstile** (the token goes to
-  `signInWithOtp` as `options.captchaToken`), then **TOTP MFA**. One shared Supabase
-  client, default export from `src/lib/supabase/client.ts`.
+- Auth is **magic-link OTP or a passkey, both behind Cloudflare Turnstile** (the token
+  goes to `signInWithOtp` / `signInWithPasskey` as `options.captchaToken`), then **TOTP
+  MFA** either way. One shared Supabase client, default export from
+  `src/lib/supabase/client.ts`.
 
 ### The MFA gate
 
@@ -321,6 +324,70 @@ This is preventive, not curative: a user who loses their only device without eve
 enrolling a backup is still locked out for good, since redeeming a code can't mint an
 `aal2` session on its own and this repo has no service key to force one server-side.
 See "Known gaps" below.
+
+### Passkeys
+
+**A passkey replaces the magic link, not the authenticator app.** This is the whole
+shape of the feature and the thing to internalise before touching it: the session
+`signInWithPasskey()` mints carries `amr: [{ method: "passkey" }]` and **`aal1`**, so
+`RequireMfa` still routes it to `/mfa-verify` and the database still refuses every row
+until a TOTP code has been spent. What a passkey saves is the round trip through the
+inbox, not the second factor. A finished sign-in reads `amr: [passkey, totp]`. Do not
+add a client-side shortcut past `/mfa-verify` for passkey sessions — GoTrue is the only
+thing that mints the `aal` claim, and it does not mint `aal2` from a passkey.
+
+The database contract is untouched by any of this: no migration, no policy, no grant.
+`yarn test` is unaffected because passkeys live in `auth.webauthn_credentials`, which
+GoTrue owns and the API never exposes.
+
+Sign-in is `signInWithPasskey()` from `login-form.tsx`, sitting under an "or" separator
+beside the email field. Two things it needs that the email path already had:
+
+- **A Turnstile token.** `/passkeys/authentication/options` is captcha-guarded like every
+  other entry point (`captcha_failed` without one), so the button is disabled until the
+  widget resolves and passes `options.captchaToken`. The challenge **spends** that token
+  whether or not the ceremony after it succeeds, so the widget is reset on both paths —
+  otherwise a user who dismisses the prompt is left holding a burnt token and a dead
+  button.
+- **A `navigate("/")` on success.** `/login` sits outside `RequireAuth`, so the
+  `SIGNED_IN` event has no guard listening above it; the redirect is manual.
+
+Registering, renaming and removing happen on `/passkeys`
+(`passkey-settings-form.tsx`, reached from "Manage passkeys" in the sidebar user menu).
+GoTrue answers `insufficient_aal` — *"AAL2 session is required to manage passkeys when
+MFA is enabled"* — to any of those at `aal1`, which is why the route lives inside
+`RequireMfa` rather than beside `/mfa-enroll`. `friendly_name` comes from the
+authenticator's AAGUID (`iCloud Keychain`, `Google Password Manager`, or a bare
+`Passkey`), so it is neither unique nor short: the row bounds it with `min-w-0` +
+`block w-full truncate` and keeps its buttons `shrink-0`, because `FieldTitle` ships
+`w-fit flex` and would otherwise run the name under them at 320px.
+
+Errors are translated by `passkeyErrorMessage` (`src/lib/supabase/passkey.ts`), the same
+submit-then-translate habit as `mfaErrorMessage`, with one wrinkle: a passkey call can
+fail on *either* side of the ceremony. The server sends an `AuthError` with a `code`
+(`webauthn_verification_failed`, `too_many_passkeys`, …); the browser sends a
+`WebAuthnError` whose `code` is a `ERROR_*` string and whose `name` is the DOM exception.
+A dismissed prompt arrives as `name: "NotAllowedError"` — *not* `ERROR_CEREMONY_ABORTED`,
+which is only ever an `AbortSignal` — and WebAuthn deliberately conflates "cancelled",
+"timed out" and "nothing to offer" into that one name, so the copy says all three rather
+than guessing. The `code` is compared as a widened `string`: GoTrue already sends the
+passkey codes, but supabase-js does not list them in its `ErrorCode` union yet.
+
+Two things the client must opt into. `createClient` needs
+`auth.experimental.passkey: true` or every passkey method **throws** rather than
+returning an error to translate. And `passkeysSupported()` gates the sign-in button on
+`PublicKeyCredential` being present — a device fact, knowable up front, so unlike a
+server rule it is checked rather than submitted into.
+
+Local dev needs `[auth.passkey] enabled = true` and an `[auth.webauthn]` block in
+`supabase/config.toml`, plus a `supabase stop && supabase start` to load them — `db
+reset` alone does not, exactly as with `[auth.mfa.totp]`. `rp_id` is `localhost` and
+`rp_origins` is `["http://localhost:5173"]`; `127.0.0.1:5173` cannot be added alongside
+it, because an origin's hostname must match `rp_id` or be a subdomain of it. **A passkey
+is bound to the `rp_id` it was registered against**, so changing that value retires every
+passkey already enrolled — pick it once, before anyone enrols. `seed.sql` cannot seed a
+passkey the way it seeds TOTP factors: the private half lives on a device, not in the
+database, so seeded users start with none.
 
 ### The active ledger
 
@@ -439,7 +506,18 @@ viewport wrapping a `*-form` component that holds all logic.
   our own could never elevate a session no matter how it was wired — not even through a
   service-role hook. **The gap that remains:** a user who loses *both* factors is locked
   out for good, because `auth.admin.mfa.deleteFactor` needs a service key and this repo
-  has none.
-- MFA on hosted Supabase requires a Pro plan; only the local stack is free.
+  has none. **A passkey is not a way out of it** — passkey sign-in mints `aal1`, so a
+  user holding a passkey and no authenticator gets exactly as far as `/mfa-verify`. The
+  reverse gap is milder: losing every passkey costs nothing but the shortcut, since the
+  magic link still works.
+- MFA on hosted Supabase requires a Pro plan; only the local stack is free. Passkeys are
+  configured separately, under **Authentication → Passkeys**, where the relying-party
+  fields have to name the production domain rather than `localhost` — a passkey enrolled
+  against one `rp_id` is unusable under another.
+- A passkey could in principle serve as the *second* factor rather than the first —
+  that is GoTrue's `[auth.mfa.web_authn]`, a different feature from the `[auth.passkey]`
+  sign-in implemented here, and the only one of the two that mints `aal2`. Nothing in
+  this repo uses it; enrolling a WebAuthn *factor* would be the way to let a security key
+  stand in for the authenticator app.
 - `yarn lint` passes with three `only-export-components` fast-refresh warnings
   (`theme-provider`, `ledger-provider`, `ui/sidebar`) — those are known and expected.
