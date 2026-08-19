@@ -196,6 +196,7 @@ export default function SettleUpPage() {
                             to: transfer.to_account_id,
                             amount: trimAmount(transfer.amount),
                             description: `settle up from the suggestions`,
+                            kind: "payment",
                           }).toString(),
                         }}
                       />
