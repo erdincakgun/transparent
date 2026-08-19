@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Field, FieldError, FieldGroup } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -200,52 +201,68 @@ export function TransactionCreateForm({
           ) : (
             <>
               <Field>
-                <Select
-                  value={fromAccountId}
-                  onValueChange={(value: string | null) =>
-                    setFromAccountId(value)
-                  }
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue>
-                      {(value: string | null) =>
-                        accounts.find((item) => item.id === value)?.name ??
-                        "From account"
+                <div className="grid grid-cols-[1fr_auto] gap-2">
+                  <div className="flex flex-col gap-2">
+                    <Select
+                      value={fromAccountId}
+                      onValueChange={(value: string | null) =>
+                        setFromAccountId(value)
                       }
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {accounts.map((account) => (
-                      <SelectItem key={account.id} value={account.id}>
-                        {account.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </Field>
-              <Field>
-                <Select
-                  value={toAccountId}
-                  onValueChange={(value: string | null) =>
-                    setToAccountId(value)
-                  }
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue>
-                      {(value: string | null) =>
-                        accounts.find((item) => item.id === value)?.name ??
-                        "To account"
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue>
+                          {(value: string | null) =>
+                            accounts.find((item) => item.id === value)?.name ??
+                            "From account"
+                          }
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {accounts.map((account) => (
+                          <SelectItem key={account.id} value={account.id}>
+                            {account.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <Select
+                      value={toAccountId}
+                      onValueChange={(value: string | null) =>
+                        setToAccountId(value)
                       }
-                    </SelectValue>
-                  </SelectTrigger>
-                  <SelectContent>
-                    {accounts.map((account) => (
-                      <SelectItem key={account.id} value={account.id}>
-                        {account.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue>
+                          {(value: string | null) =>
+                            accounts.find((item) => item.id === value)?.name ??
+                            "To account"
+                          }
+                        </SelectValue>
+                      </SelectTrigger>
+                      <SelectContent>
+                        {accounts.map((account) => (
+                          <SelectItem key={account.id} value={account.id}>
+                            {account.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="h-auto w-9 px-0"
+                    aria-label="Swap accounts"
+                    title="Swap accounts"
+                    disabled={submitted}
+                    onClick={() => {
+                      setFromAccountId(toAccountId);
+                      setToAccountId(fromAccountId);
+                    }}
+                  >
+                    <ArrowUpDown />
+                  </Button>
+                </div>
               </Field>
               <Field>
                 <Input
