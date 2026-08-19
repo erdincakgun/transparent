@@ -14,7 +14,12 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { useLedger } from "@/components/ledger-provider";
-import { Archive, ChevronsUpDownIcon, PlusIcon } from "lucide-react";
+import {
+  Archive,
+  ChevronsUpDownIcon,
+  PencilLine,
+  PlusIcon,
+} from "lucide-react";
 import { useNavigate } from "react-router";
 
 export function LedgerSwitcher() {
@@ -79,19 +84,34 @@ export function LedgerSwitcher() {
                 </div>
               </DropdownMenuItem>
               {activeLedger ? (
-                <DropdownMenuItem
-                  className="gap-2 p-2"
-                  onClick={() =>
-                    navigate(`/ledgers/delete/${activeLedger.id}`)
-                  }
-                >
-                  <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
-                    <Archive className="size-4" />
-                  </div>
-                  <div className="font-medium text-muted-foreground">
-                    Archive this ledger
-                  </div>
-                </DropdownMenuItem>
+                <>
+                  <DropdownMenuItem
+                    className="gap-2 p-2"
+                    onClick={() =>
+                      navigate(`/ledgers/describe/${activeLedger.id}`)
+                    }
+                  >
+                    <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
+                      <PencilLine className="size-4" />
+                    </div>
+                    <div className="font-medium text-muted-foreground">
+                      Edit description
+                    </div>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="gap-2 p-2"
+                    onClick={() =>
+                      navigate(`/ledgers/delete/${activeLedger.id}`)
+                    }
+                  >
+                    <div className="flex size-6 items-center justify-center rounded-md border bg-transparent">
+                      <Archive className="size-4" />
+                    </div>
+                    <div className="font-medium text-muted-foreground">
+                      Archive this ledger
+                    </div>
+                  </DropdownMenuItem>
+                </>
               ) : null}
             </DropdownMenuGroup>
           </DropdownMenuContent>
