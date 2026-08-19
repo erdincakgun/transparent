@@ -7,6 +7,9 @@ export const LedgerDeletePage = lazy(
 export const LedgerCreatePage = lazy(
   () => import("@/pages/ledger-create.tsx"),
 );
+export const LedgerDescribePage = lazy(
+  () => import("@/pages/ledger-describe.tsx"),
+);
 export const MfaEnrollPage = lazy(() => import("@/pages/mfa-enroll.tsx"));
 export const MfaVerifyPage = lazy(() => import("@/pages/mfa-verify.tsx"));
 export const MfaSettingsPage = lazy(() => import("@/pages/mfa-settings.tsx"));
@@ -22,6 +25,9 @@ export const AccountCreatePage = lazy(
 );
 export const AccountDeletePage = lazy(
   () => import("@/pages/account-delete.tsx"),
+);
+export const AccountDescribePage = lazy(
+  () => import("@/pages/account-describe.tsx"),
 );
 export const TransactionCreatePage = lazy(
   () => import("@/pages/transaction-create.tsx"),
