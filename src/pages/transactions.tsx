@@ -155,11 +155,18 @@ export default function TransactionsPage() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-2">
-        <p className="text-sm text-muted-foreground">
-          {loading
-            ? "Loading transactions"
-            : `${transactions.length} ${transactions.length === 1 ? "transaction" : "transactions"}`}
-        </p>
+        <div className="flex min-w-0 flex-col gap-0.5">
+          <p className="text-sm text-muted-foreground">
+            {loading
+              ? "Loading transactions"
+              : `${transactions.length} ${transactions.length === 1 ? "transaction" : "transactions"}`}
+          </p>
+          {activeLedger?.description ? (
+            <p className="truncate text-xs text-muted-foreground">
+              {activeLedger.description}
+            </p>
+          ) : null}
+        </div>
         <div className="ml-auto flex flex-wrap items-center gap-2">
           <Button
             variant="outline"
