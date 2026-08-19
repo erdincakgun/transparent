@@ -114,3 +114,22 @@ insert into public.deleted_accounts (account_id, ledger_id)
 values ('00000000-0000-4000-c000-00000000acc6', '00000000-0000-4000-b000-000000000002');
 
 reset request.jwt.claims;
+
+-- ------------------------------------------------ rewritten descriptions --
+-- A description is corrected by appending, so the fixture carries a few
+-- rewrites: the household ledger reworded by the member who did not open it,
+-- one account described afresh, and one whose description is cleared away
+-- entirely. active_ledgers and active_accounts show the newest of each; the
+-- originals above are still on the base rows, and both rewrites are still in
+-- the log with the actor who made them.
+
+set request.jwt.claims = '{"sub":"00000000-0000-4000-a000-00000000b0b0","role":"authenticated","aal":"aal2"}';
+
+insert into public.ledger_descriptions (ledger_id, description) values
+  ('00000000-0000-4000-b000-000000000001', 'Paylasilan ev masraflari ve faturalar');
+
+insert into public.account_descriptions (account_id, ledger_id, description) values
+  ('00000000-0000-4000-c000-00000000acc2', '00000000-0000-4000-b000-000000000001', 'Market ve temizlik'),
+  ('00000000-0000-4000-c000-00000000acc1', '00000000-0000-4000-b000-000000000001', null);
+
+reset request.jwt.claims;
