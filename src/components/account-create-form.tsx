@@ -46,7 +46,7 @@ export function AccountCreateForm({
       setSubmitted(false);
       setError(
         error.code === "23505"
-          ? "This ledger already has an account with that name."
+          ? "This ledger already has an active account with that name."
           : error.message,
       );
       return;
