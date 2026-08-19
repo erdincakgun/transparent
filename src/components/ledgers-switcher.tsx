@@ -41,7 +41,12 @@ export function LedgerSwitcher() {
           >
             <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
               <span className="truncate font-medium">{activeLedger?.name}</span>
-              <span className="truncate text-xs">{activeLedger?.id}</span>
+              {/* `size="lg"` leaves room for one line under the name, so the
+                  description takes it when there is one and the id keeps it
+                  otherwise. Both are still spelled out in the dropdown. */}
+              <span className="truncate text-xs">
+                {activeLedger?.description ?? activeLedger?.id}
+              </span>
             </div>
             <ChevronsUpDownIcon className="mx-auto" />
           </DropdownMenuTrigger>
@@ -63,6 +68,11 @@ export function LedgerSwitcher() {
                 >
                   <div className="grid flex-1 text-left leading-tight">
                     <span className="truncate font-medium">{ledger.name}</span>
+                    {ledger.description ? (
+                      <span className="truncate text-xs text-muted-foreground">
+                        {ledger.description}
+                      </span>
+                    ) : null}
                     <span className="truncate text-xs text-muted-foreground">
                       {ledger.id}
                     </span>
