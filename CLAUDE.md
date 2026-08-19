@@ -297,6 +297,22 @@ API, so there is no way to look a person up. The sidebar user menu offers "Copy 
   default `min-width: auto` lets one long account name widen the whole layout and scroll
   the page sideways instead of truncating. Verify a change at **320px**, not just at the
   `sm` breakpoint — that is where these break first.
+- **A clamped row opens a modal.** One line is not enough for a 1000-character
+  description, but growing the row for it would make every row a different height. So the
+  description stays `truncate`d and **the row itself is the trigger**:
+  `TransactionDetailsDialog` and `AccountDetailsDialog` render an absolutely-positioned
+  `inset-0` `DialogTrigger` as the row's first child, which is why the row carries
+  `relative` — an overlay adds no height, so the rows stay uniform. The row's action
+  buttons must sit **above** that overlay (`relative z-20` on the button group) or the
+  modal swallows every duplicate/revert/edit/delete click. The list container gains
+  `overflow-hidden` so the row's `hover:bg-muted/50` is clipped to the border radius. What
+  the overlay costs is hover and text selection over the row, which is why the dialog
+  spells out in full what the row only hints at: the whole description, and the raw uuids
+  (`created_by`, the row id) that `Actor`'s `title` tooltip used to reveal. The dialog is
+  `src/components/ui/dialog.tsx`, the Base UI shadcn primitive — beware that
+  `shadcn add <anything>` also rewrites `ui/button.tsx`, undoing the `button-variants.tsx`
+  split this repo keeps for oxlint's `only-export-components`; check it out again after
+  adding a primitive.
 - Auth is **magic-link OTP or a passkey, both behind Cloudflare Turnstile** (the token
   goes to `signInWithOtp` / `signInWithPasskey` as `options.captchaToken`), then **TOTP
   MFA** either way. One shared Supabase client, default export from
@@ -514,6 +530,17 @@ form calls `refreshLedgers()` after a successful save so the sidebar and the use
 catch up, and that would move an uncontrolled input's `defaultValue` out from under it
 while it is still mounted, which Base UI warns about. Both therefore fetch their own
 current value and gate the input on that load.
+
+**A ledger's description is shown wherever the ledger is named.** An account's sits under
+its name on the accounts row; the ledger equivalent is the `LedgerSwitcher` — under the
+name in the trigger, where it takes the one line the `size="lg"` button has left and the
+uuid keeps that line only when there is no description, and as its own line between name
+and uuid in the dropdown, which is where it tells two ledgers apart. It repeats under the
+count in all four dashboard page toolbars (the `min-w-0` column the users page already
+used) and in the name+uuid ledger card or `Select` of every standalone form. Every one of
+them takes it off `useLedger()`, which reads `active_ledgers` and so already holds the
+newest rewrite — no screen fetches a description of its own. The one that does not repeat
+it is `ledger-describe-form.tsx`, whose input is the description.
 
 **Deleting an account is a two-step flow** (`account-delete-form.tsx`). It loads the
 account's balance alongside the ledger's `active_accounts`; at zero it offers the delete
