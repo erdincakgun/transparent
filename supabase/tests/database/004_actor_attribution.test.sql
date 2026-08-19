@@ -57,19 +57,19 @@ select is(pg_temp.exec_as(pg_temp.invitee(),
 -- both actors record a transaction each, netting back to zero so the
 -- account can be retired below
 select is(pg_temp.exec_as(pg_temp.creator(),
-          'insert into public.transactions (ledger_id, from_account_id, to_account_id, amount, description)
+          'insert into public.transactions (ledger_id, from_account_id, to_account_id, amount, description, kind)
            values (''00000000-0000-4000-f000-00000000003a'',
                    (select id from public.accounts where ledger_id = ''00000000-0000-4000-f000-00000000003a'' and name = ''A''),
                    (select id from public.accounts where ledger_id = ''00000000-0000-4000-f000-00000000003a'' and name = ''B''),
-                   10, ''out'')'),
+                   10, ''out'', ''accrual'')'),
           'OK', 'fixture: creator records a transaction');
 
 select is(pg_temp.exec_as(pg_temp.invitee(),
-          'insert into public.transactions (ledger_id, from_account_id, to_account_id, amount, description)
+          'insert into public.transactions (ledger_id, from_account_id, to_account_id, amount, description, kind)
            values (''00000000-0000-4000-f000-00000000003a'',
                    (select id from public.accounts where ledger_id = ''00000000-0000-4000-f000-00000000003a'' and name = ''B''),
                    (select id from public.accounts where ledger_id = ''00000000-0000-4000-f000-00000000003a'' and name = ''A''),
-                   10, ''storno: back'')'),
+                   10, ''storno: back'', ''accrual'')'),
           'OK', 'fixture: the invitee records the storno, netting account A back to zero');
 
 -- creator retires their now-settled account
