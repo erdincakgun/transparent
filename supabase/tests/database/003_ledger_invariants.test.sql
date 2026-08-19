@@ -48,12 +48,12 @@ insert into public.accounts (id, ledger_id, name) values
   ('00000000-0000-4000-f000-0000000000c6', '00000000-0000-4000-f000-00000000002a', 'Settled'),
   ('00000000-0000-4000-f000-0000000000d1', '00000000-0000-4000-f000-00000000002b', 'Other');
 
-insert into public.transactions (ledger_id, from_account_id, to_account_id, amount, description) values
-  ('00000000-0000-4000-f000-00000000002a', '00000000-0000-4000-f000-0000000000c2', '00000000-0000-4000-f000-0000000000c1', 100.0000, 'pair'),
-  ('00000000-0000-4000-f000-00000000002a', '00000000-0000-4000-f000-0000000000c4', '00000000-0000-4000-f000-0000000000c3',  30.0000, 'rem 1'),
-  ('00000000-0000-4000-f000-00000000002a', '00000000-0000-4000-f000-0000000000c5', '00000000-0000-4000-f000-0000000000c3',  45.0000, 'rem 2'),
-  ('00000000-0000-4000-f000-00000000002a', '00000000-0000-4000-f000-0000000000c1', '00000000-0000-4000-f000-0000000000c6',  20.0000, 'to settled'),
-  ('00000000-0000-4000-f000-00000000002a', '00000000-0000-4000-f000-0000000000c6', '00000000-0000-4000-f000-0000000000c1',  20.0000, 'storno: back');
+insert into public.transactions (ledger_id, from_account_id, to_account_id, amount, description, kind) values
+  ('00000000-0000-4000-f000-00000000002a', '00000000-0000-4000-f000-0000000000c2', '00000000-0000-4000-f000-0000000000c1', 100.0000, 'pair', 'accrual'),
+  ('00000000-0000-4000-f000-00000000002a', '00000000-0000-4000-f000-0000000000c4', '00000000-0000-4000-f000-0000000000c3',  30.0000, 'rem 1', 'accrual'),
+  ('00000000-0000-4000-f000-00000000002a', '00000000-0000-4000-f000-0000000000c5', '00000000-0000-4000-f000-0000000000c3',  45.0000, 'rem 2', 'payment'),
+  ('00000000-0000-4000-f000-00000000002a', '00000000-0000-4000-f000-0000000000c1', '00000000-0000-4000-f000-0000000000c6',  20.0000, 'to settled', 'accrual'),
+  ('00000000-0000-4000-f000-00000000002a', '00000000-0000-4000-f000-0000000000c6', '00000000-0000-4000-f000-0000000000c1',  20.0000, 'storno: back', 'accrual');
 
 reset request.jwt.claims;
 
@@ -69,42 +69,42 @@ select is((select count(*)::text from public.ledgers_users
 -- ------------------------------------------------ money stays in a ledger ----
 
 select is(pg_temp.exec_as(pg_temp.owner(),
-          'insert into public.transactions (ledger_id, from_account_id, to_account_id, amount, description)
+          'insert into public.transactions (ledger_id, from_account_id, to_account_id, amount, description, kind)
            values (''00000000-0000-4000-f000-00000000002a'', ''00000000-0000-4000-f000-0000000000c1'',
-                   ''00000000-0000-4000-f000-0000000000d1'', 5, ''cross'')'),
+                   ''00000000-0000-4000-f000-0000000000d1'', 5, ''cross'', ''accrual'')'),
           'ERROR:23503',
           'a transaction cannot reach an account in another ledger -- composite FK, no trigger needed');
 
 -- ------------------------------------------------------ amount and sides ----
 
 select is(pg_temp.exec_as(pg_temp.owner(),
-          'insert into public.transactions (ledger_id, from_account_id, to_account_id, amount, description)
+          'insert into public.transactions (ledger_id, from_account_id, to_account_id, amount, description, kind)
            values (''00000000-0000-4000-f000-00000000002a'', ''00000000-0000-4000-f000-0000000000c1'',
-                   ''00000000-0000-4000-f000-0000000000c2'', 0, ''zero'')'),
+                   ''00000000-0000-4000-f000-0000000000c2'', 0, ''zero'', ''accrual'')'),
           'ERROR:23514', 'a zero amount is refused');
 
 select is(pg_temp.exec_as(pg_temp.owner(),
-          'insert into public.transactions (ledger_id, from_account_id, to_account_id, amount, description)
+          'insert into public.transactions (ledger_id, from_account_id, to_account_id, amount, description, kind)
            values (''00000000-0000-4000-f000-00000000002a'', ''00000000-0000-4000-f000-0000000000c1'',
-                   ''00000000-0000-4000-f000-0000000000c2'', -5, ''negative'')'),
+                   ''00000000-0000-4000-f000-0000000000c2'', -5, ''negative'', ''accrual'')'),
           'ERROR:23514', 'direction is which side you sit on, never a negative amount');
 
 select is(pg_temp.exec_as(pg_temp.owner(),
-          'insert into public.transactions (ledger_id, from_account_id, to_account_id, amount, description)
+          'insert into public.transactions (ledger_id, from_account_id, to_account_id, amount, description, kind)
            values (''00000000-0000-4000-f000-00000000002a'', ''00000000-0000-4000-f000-0000000000c1'',
-                   ''00000000-0000-4000-f000-0000000000c1'', 5, ''self'')'),
+                   ''00000000-0000-4000-f000-0000000000c1'', 5, ''self'', ''accrual'')'),
           'ERROR:23514', 'an account cannot pay itself');
 
 select is(pg_temp.exec_as(pg_temp.owner(),
-          'insert into public.transactions (ledger_id, from_account_id, to_account_id, amount, description)
+          'insert into public.transactions (ledger_id, from_account_id, to_account_id, amount, description, kind)
            values (''00000000-0000-4000-f000-00000000002a'', ''00000000-0000-4000-f000-0000000000c1'',
-                   ''00000000-0000-4000-f000-0000000000c2'', 0.00004, ''rounds to zero'')'),
+                   ''00000000-0000-4000-f000-0000000000c2'', 0.00004, ''rounds to zero'', ''accrual'')'),
           'ERROR:23514', 'an amount that rounds away to zero at scale 4 is refused, not silently stored');
 
 select is(pg_temp.exec_as(pg_temp.owner(),
-          'insert into public.transactions (ledger_id, from_account_id, to_account_id, amount, description)
+          'insert into public.transactions (ledger_id, from_account_id, to_account_id, amount, description, kind)
            values (''00000000-0000-4000-f000-00000000002a'', ''00000000-0000-4000-f000-0000000000c1'',
-                   ''00000000-0000-4000-f000-0000000000c2'', 5, '''')'),
+                   ''00000000-0000-4000-f000-0000000000c2'', 5, '''', ''accrual'')'),
           'ERROR:23514', 'a blank description is refused');
 
 -- ------------------------------------------------------- account naming ----
@@ -132,15 +132,15 @@ select is(pg_temp.exec_as(pg_temp.owner(),
           'OK', 'an account settled at exactly zero can be retired');
 
 select is(pg_temp.exec_as(pg_temp.owner(),
-          'insert into public.transactions (ledger_id, from_account_id, to_account_id, amount, description)
+          'insert into public.transactions (ledger_id, from_account_id, to_account_id, amount, description, kind)
            values (''00000000-0000-4000-f000-00000000002a'', ''00000000-0000-4000-f000-0000000000c1'',
-                   ''00000000-0000-4000-f000-0000000000c6'', 5, ''after death'')'),
+                   ''00000000-0000-4000-f000-0000000000c6'', 5, ''after death'', ''accrual'')'),
           'ERROR:23001', 'a retired account can never receive again -- its balance is zero forever');
 
 select is(pg_temp.exec_as(pg_temp.owner(),
-          'insert into public.transactions (ledger_id, from_account_id, to_account_id, amount, description)
+          'insert into public.transactions (ledger_id, from_account_id, to_account_id, amount, description, kind)
            values (''00000000-0000-4000-f000-00000000002a'', ''00000000-0000-4000-f000-0000000000c6'',
-                   ''00000000-0000-4000-f000-0000000000c1'', 5, ''after death'')'),
+                   ''00000000-0000-4000-f000-0000000000c1'', 5, ''after death'', ''accrual'')'),
           'ERROR:23001', 'nor send');
 
 select is((select count(*)::text from public.active_accounts
