@@ -107,6 +107,22 @@ holding money; those locks are the reason both functions are `security definer` 
 `authenticated` has no `update` privilege to lock a row with. Deletion is final: there is
 no undelete, because `deleted_accounts` is append-only like everything else.
 
+**What retirement releases is the name.** Account names are unique per ledger and
+case-insensitive, but only among *active* accounts — a settled "Kasa" can be retired and a
+fresh "Kasa" opened the next day. No index can say that: a partial unique index may only
+test columns of the table it sits on, and "is this account retired" lives in
+`deleted_accounts`. So `010_reusable_account_names.sql` drops the old
+`accounts_ledger_id_name_unique` for a plain lookup index plus a `before insert` trigger,
+`accounts_reject_duplicate_active_name`, raising `unique_violation` (`23505`) so the copy
+already keyed on that code still reads. It takes
+`pg_advisory_xact_lock(hashtext(ledger_id), hashtext(lower(name)))` first for the same
+reason the deletion triggers take row locks — without it two concurrent inserts of the
+same name would both look, both see nothing, and both land — and the lock is advisory
+rather than a row lock because what is being claimed is a name, not a row: there is
+nothing yet to lock. The retired row keeps its own name forever, so its history stays
+readable; a ledger that has reused a name shows two accounts under it on the transactions
+and settle-up pages, told apart only by id.
+
 **Cross-ledger transactions are impossible by construction.** `accounts` carries a
 `unique (id, ledger_id)` and `transactions` has two *composite* foreign keys
 `(from_account_id, ledger_id)` and `(to_account_id, ledger_id)`. This is why every
@@ -129,8 +145,9 @@ mechanism that already protects `id`, `created_at`, and `deleted_at`.
 
 Sending any other column fails. Amounts are `numeric(20,4)`, must be `> 0`, and the two
 accounts must differ — direction is expressed by which side an account sits on, never by
-a negative amount. Account names are unique per ledger, case-insensitively. `name` and
-`description` have length checks (`ledgers` 100, `accounts` 200, descriptions 1000).
+a negative amount. Account names are unique per ledger, case-insensitively, among active
+accounts only (above). `name` and `description` have length checks (`ledgers` 100,
+`accounts` 200, descriptions 1000).
 
 **Creating a ledger is a two-step dance handled by the DB.** `ledgers_insert_authenticated`
 lets any authenticated user insert, and an `after insert` trigger adds the creator to
