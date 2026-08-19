@@ -1,7 +1,7 @@
 import supabase from "@/lib/supabase/client";
 import { createContext, useContext, useEffect, useState } from "react";
 
-type Ledger = { id: string; name: string };
+type Ledger = { id: string; name: string; description: string | null };
 
 type LedgerProviderState = {
   ledgers: Ledger[];
@@ -39,7 +39,7 @@ const writeStoredLedgerId = (storageKey: string | undefined, id: string) => {
 const fetchLedgers = async (): Promise<Ledger[]> => {
   const { data } = await supabase
     .from("active_ledgers")
-    .select("id, name")
+    .select("id, name, description")
     .order("name");
 
   return data ?? [];
