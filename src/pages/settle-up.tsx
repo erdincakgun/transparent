@@ -134,13 +134,14 @@ export default function SettleUpPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <p className="text-sm text-muted-foreground">
           {loading
             ? "Loading transfers"
             : `${transfers.length} ${transfers.length === 1 ? "transfer" : "transfers"} to settle up`}
         </p>
         <Button
+          className="ml-auto"
           variant="outline"
           disabled={exporting || !ledgerId}
           onClick={handleExport}
@@ -169,20 +170,22 @@ export default function SettleUpPage() {
             return (
               <div
                 key={`${transfer.from_account_id}-${transfer.to_account_id}`}
-                className="flex items-center justify-between gap-4 px-4 py-3"
+                className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
               >
                 <div className="flex min-w-0 items-center gap-1.5 text-sm font-medium">
                   <span className="truncate">{fromName}</span>
                   <ArrowRightIcon className="size-3.5 shrink-0 text-muted-foreground" />
                   <span className="truncate">{toName}</span>
                 </div>
-                <div className="flex shrink-0 items-center gap-3">
+                <div className="flex items-center justify-between gap-3 sm:shrink-0">
                   <span className="text-sm font-medium tabular-nums">
                     {amountFormat.format(Number(transfer.amount))}
                   </span>
                   <Button
                     variant="outline"
                     size="sm"
+                    className="max-sm:size-9"
+                    aria-label="Record this transfer"
                     nativeButton={false}
                     render={
                       <Link
