@@ -11,6 +11,7 @@ import {
   LoginPage,
   LedgerCreatePage,
   LedgerDeletePage,
+  LedgerDescribePage,
   MfaEnrollPage,
   MfaVerifyPage,
   MfaSettingsPage,
@@ -21,6 +22,7 @@ import {
   UsersPage,
   AccountCreatePage,
   AccountDeletePage,
+  AccountDescribePage,
   TransactionCreatePage,
   UserAddPage,
   UserDeletePage,
@@ -74,12 +76,20 @@ createRoot(document.getElementById("root")!).render(
                     element={withSuspense(LedgerDeletePage)}
                   />
                   <Route
+                    path="/ledgers/describe/:ledgerId"
+                    element={withSuspense(LedgerDescribePage)}
+                  />
+                  <Route
                     path="/account-create"
                     element={withSuspense(AccountCreatePage)}
                   />
                   <Route
                     path="/accounts/delete/:accountId"
                     element={withSuspense(AccountDeletePage)}
+                  />
+                  <Route
+                    path="/accounts/describe/:accountId"
+                    element={withSuspense(AccountDescribePage)}
                   />
                   <Route
                     path="/transaction-create"
