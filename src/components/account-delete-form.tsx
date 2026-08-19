@@ -108,6 +108,7 @@ export function AccountDeleteForm({
         to: negative ? accountId : heirId,
         amount: trimAmount(negative ? balance.slice(1) : balance),
         description: `close account: ${account.name}`,
+        kind: "payment",
       }).toString(),
     });
   }
