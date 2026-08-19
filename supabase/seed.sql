@@ -74,13 +74,16 @@ insert into public.accounts (id, ledger_id, name, description) values
   ('00000000-0000-4000-c000-00000000acc2', '00000000-0000-4000-b000-000000000001', 'Ayse',   'Market'),
   ('00000000-0000-4000-c000-00000000acc3', '00000000-0000-4000-b000-000000000001', 'Mehmet', null);
 
-insert into public.transactions (ledger_id, from_account_id, to_account_id, amount, description) values
-  ('00000000-0000-4000-b000-000000000001', '00000000-0000-4000-c000-00000000acc1', '00000000-0000-4000-c000-00000000acc2', 1200.0000, 'Market alisverisi'),
-  ('00000000-0000-4000-b000-000000000001', '00000000-0000-4000-c000-00000000acc1', '00000000-0000-4000-c000-00000000acc3',  800.5000, 'Elektrik faturasi'),
-  ('00000000-0000-4000-b000-000000000001', '00000000-0000-4000-c000-00000000acc2', '00000000-0000-4000-c000-00000000acc3',  450.2500, 'Internet'),
-  ('00000000-0000-4000-b000-000000000001', '00000000-0000-4000-c000-00000000acc3', '00000000-0000-4000-c000-00000000acc1',  300.0000, 'Kira katkisi');
+insert into public.transactions (ledger_id, from_account_id, to_account_id, amount, description, kind) values
+  ('00000000-0000-4000-b000-000000000001', '00000000-0000-4000-c000-00000000acc1', '00000000-0000-4000-c000-00000000acc2', 1200.0000, 'Market alisverisi',  'accrual'),
+  ('00000000-0000-4000-b000-000000000001', '00000000-0000-4000-c000-00000000acc1', '00000000-0000-4000-c000-00000000acc3',  800.5000, 'Elektrik faturasi',  'accrual'),
+  ('00000000-0000-4000-b000-000000000001', '00000000-0000-4000-c000-00000000acc2', '00000000-0000-4000-c000-00000000acc3',  450.2500, 'Internet',           'accrual'),
+  ('00000000-0000-4000-b000-000000000001', '00000000-0000-4000-c000-00000000acc3', '00000000-0000-4000-c000-00000000acc1',  300.0000, 'Kira katkisi',       'payment');
 
 -- resulting balances: Erdinc -1700.5000, Ayse +749.7500, Mehmet +950.7500
+-- Kira katkisi is Mehmet paying part of that back, so it moves the balances and
+-- nothing else: income/expense reads Erdinc 0/2000.5000, Ayse 1200.0000/450.2500,
+-- Mehmet 1250.7500/0.
 
 -- --------------------------------------------------------- ledger: office --
 
@@ -101,11 +104,11 @@ insert into public.accounts (id, ledger_id, name, description) values
   ('00000000-0000-4000-c000-00000000acc6', '00000000-0000-4000-b000-000000000002', 'Eski Hesap', 'Kapatilacak'),
   ('00000000-0000-4000-c000-00000000acc7', '00000000-0000-4000-b000-000000000002', 'Acik Hesap', 'Bakiyesi duran hesap');
 
-insert into public.transactions (ledger_id, from_account_id, to_account_id, amount, description) values
-  ('00000000-0000-4000-b000-000000000002', '00000000-0000-4000-c000-00000000acc4', '00000000-0000-4000-c000-00000000acc5', 5000.0000, 'Aylik butce'),
-  ('00000000-0000-4000-b000-000000000002', '00000000-0000-4000-c000-00000000acc5', '00000000-0000-4000-c000-00000000acc6',  500.0000, 'Devir'),
-  ('00000000-0000-4000-b000-000000000002', '00000000-0000-4000-c000-00000000acc6', '00000000-0000-4000-c000-00000000acc5',  500.0000, 'storno: devir geri alindi'),
-  ('00000000-0000-4000-b000-000000000002', '00000000-0000-4000-c000-00000000acc5', '00000000-0000-4000-c000-00000000acc7',  250.0000, 'Kirtasiye avansi');
+insert into public.transactions (ledger_id, from_account_id, to_account_id, amount, description, kind) values
+  ('00000000-0000-4000-b000-000000000002', '00000000-0000-4000-c000-00000000acc4', '00000000-0000-4000-c000-00000000acc5', 5000.0000, 'Aylik butce',               'payment'),
+  ('00000000-0000-4000-b000-000000000002', '00000000-0000-4000-c000-00000000acc5', '00000000-0000-4000-c000-00000000acc6',  500.0000, 'Devir',                     'payment'),
+  ('00000000-0000-4000-b000-000000000002', '00000000-0000-4000-c000-00000000acc6', '00000000-0000-4000-c000-00000000acc5',  500.0000, 'storno: devir geri alindi', 'payment'),
+  ('00000000-0000-4000-b000-000000000002', '00000000-0000-4000-c000-00000000acc5', '00000000-0000-4000-c000-00000000acc7',  250.0000, 'Kirtasiye avansi',          'accrual');
 
 -- 'Eski Hesap' is now settled at exactly 0, the only state the deleted_accounts
 -- trigger accepts. 'Acik Hesap' deliberately is not -- it is the fixture for the
