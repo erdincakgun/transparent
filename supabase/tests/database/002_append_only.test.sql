@@ -54,9 +54,9 @@ insert into public.accounts (id, ledger_id, name) values
   ('00000000-0000-4000-f000-0000000000b1', '00000000-0000-4000-f000-00000000001a', 'A'),
   ('00000000-0000-4000-f000-0000000000b2', '00000000-0000-4000-f000-00000000001a', 'B'),
   ('00000000-0000-4000-f000-0000000000b3', '00000000-0000-4000-f000-00000000001a', 'Gone');
-insert into public.transactions (ledger_id, from_account_id, to_account_id, amount, description)
+insert into public.transactions (ledger_id, from_account_id, to_account_id, amount, description, kind)
 values ('00000000-0000-4000-f000-00000000001a', '00000000-0000-4000-f000-0000000000b1',
-        '00000000-0000-4000-f000-0000000000b2', 10, 'fixture');
+        '00000000-0000-4000-f000-0000000000b2', 10, 'fixture', 'accrual');
 insert into public.deleted_accounts (account_id, ledger_id)
 values ('00000000-0000-4000-f000-0000000000b3', '00000000-0000-4000-f000-00000000001a');
 
@@ -123,9 +123,9 @@ select is(pg_temp.exec_as(pg_temp.member(),
 -- ------------------------------- server-generated columns are not insertable ----
 
 select is(pg_temp.exec_as(pg_temp.member(),
-          'insert into public.transactions (id, ledger_id, from_account_id, to_account_id, amount, description)
+          'insert into public.transactions (id, ledger_id, from_account_id, to_account_id, amount, description, kind)
            values (gen_random_uuid(), ''00000000-0000-4000-f000-00000000001a'',
-                   ''00000000-0000-4000-f000-0000000000b1'', ''00000000-0000-4000-f000-0000000000b2'', 1, ''x'')'),
+                   ''00000000-0000-4000-f000-0000000000b1'', ''00000000-0000-4000-f000-0000000000b2'', 1, ''x'', ''accrual'')'),
           'ERROR:42501',
           'column-level grants reject a client-supplied id -- the mechanism that will protect created_by');
 
@@ -143,9 +143,9 @@ select is(pg_temp.exec_as(pg_temp.member(),
           'ERROR:42501', 'created_by is absent from the accounts insert grant');
 
 select is(pg_temp.exec_as(pg_temp.member(),
-          'insert into public.transactions (ledger_id, from_account_id, to_account_id, amount, description, created_by)
+          'insert into public.transactions (ledger_id, from_account_id, to_account_id, amount, description, kind, created_by)
            values (''00000000-0000-4000-f000-00000000001a'', ''00000000-0000-4000-f000-0000000000b1'',
-                   ''00000000-0000-4000-f000-0000000000b2'', 1, ''x'',
+                   ''00000000-0000-4000-f000-0000000000b2'', 1, ''x'', ''accrual'',
                    ''00000000-0000-4000-f000-000000000012'')'),
           'ERROR:42501', 'created_by is absent from the transactions insert grant');
 
