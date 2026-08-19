@@ -159,13 +159,13 @@ export default function TransactionsPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <p className="text-sm text-muted-foreground">
           {loading
             ? "Loading transactions"
             : `${transactions.length} ${transactions.length === 1 ? "transaction" : "transactions"}`}
         </p>
-        <div className="flex items-center gap-2">
+        <div className="ml-auto flex flex-wrap items-center gap-2">
           <Button
             variant="outline"
             disabled={exporting || !ledgerId}
@@ -199,7 +199,7 @@ export default function TransactionsPage() {
           {transactions.map((transaction) => (
             <div
               key={transaction.id}
-              className="flex items-center justify-between gap-4 px-4 py-3"
+              className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
             >
               <div className="flex min-w-0 flex-col gap-0.5">
                 <div className="flex min-w-0 items-center gap-1.5 text-sm font-medium">
@@ -215,12 +215,12 @@ export default function TransactionsPage() {
                   {transaction.description}
                 </span>
               </div>
-              <div className="flex shrink-0 items-center gap-3">
-                <div className="flex flex-col items-end gap-0.5">
+              <div className="flex items-center justify-between gap-3 sm:shrink-0">
+                <div className="flex min-w-0 flex-col gap-0.5 sm:items-end">
                   <span className="text-sm font-medium tabular-nums">
                     {amountFormat.format(Number(transaction.amount))}
                   </span>
-                  <span className="text-xs text-muted-foreground">
+                  <span className="truncate text-xs text-muted-foreground">
                     {dateFormat.format(new Date(transaction.created_at))} ·{" "}
                     <Actor
                       userId={transaction.created_by}
@@ -228,48 +228,52 @@ export default function TransactionsPage() {
                     />
                   </span>
                 </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  aria-label="Duplicate transaction"
-                  nativeButton={false}
-                  render={
-                    <Link
-                      to={{
-                        pathname: "/transaction-create",
-                        search: new URLSearchParams({
-                          from: transaction.from_account_id,
-                          to: transaction.to_account_id,
-                          amount: trimAmount(transaction.amount),
-                          description: transaction.description,
-                        }).toString(),
-                      }}
-                    />
-                  }
-                >
-                  <CopyPlusIcon />
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  aria-label="Revert transaction"
-                  nativeButton={false}
-                  render={
-                    <Link
-                      to={{
-                        pathname: "/transaction-create",
-                        search: new URLSearchParams({
-                          from: transaction.to_account_id,
-                          to: transaction.from_account_id,
-                          amount: trimAmount(transaction.amount),
-                          description: `revert: ${transaction.description} (${dateFormat.format(new Date(transaction.created_at))})`,
-                        }).toString(),
-                      }}
-                    />
-                  }
-                >
-                  <Undo2 />
-                </Button>
+                <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="max-sm:size-9"
+                    aria-label="Duplicate transaction"
+                    nativeButton={false}
+                    render={
+                      <Link
+                        to={{
+                          pathname: "/transaction-create",
+                          search: new URLSearchParams({
+                            from: transaction.from_account_id,
+                            to: transaction.to_account_id,
+                            amount: trimAmount(transaction.amount),
+                            description: transaction.description,
+                          }).toString(),
+                        }}
+                      />
+                    }
+                  >
+                    <CopyPlusIcon />
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="max-sm:size-9"
+                    aria-label="Revert transaction"
+                    nativeButton={false}
+                    render={
+                      <Link
+                        to={{
+                          pathname: "/transaction-create",
+                          search: new URLSearchParams({
+                            from: transaction.to_account_id,
+                            to: transaction.from_account_id,
+                            amount: trimAmount(transaction.amount),
+                            description: `revert: ${transaction.description} (${dateFormat.format(new Date(transaction.created_at))})`,
+                          }).toString(),
+                        }}
+                      />
+                    }
+                  >
+                    <Undo2 />
+                  </Button>
+                </div>
               </div>
             </div>
           ))}
