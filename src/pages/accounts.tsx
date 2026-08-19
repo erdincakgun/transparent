@@ -5,16 +5,13 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLedger } from "@/components/ledger-provider";
 import { Actor } from "@/components/actor";
+import {
+  AccountDetailsDialog,
+  type Account,
+} from "@/components/account-details-dialog";
 import { downloadCsv } from "@/lib/csv";
 import { fetchAllRows } from "@/lib/pagination";
 import supabase from "@/lib/supabase/client";
-
-type Account = {
-  id: string;
-  name: string;
-  description: string | null;
-  created_by: string;
-};
 
 type AccountBalance = { id: string; balance: string };
 
@@ -167,12 +164,17 @@ export default function AccountsPage() {
           ))}
         </div>
       ) : accounts.length ? (
-        <div className="divide-y rounded-lg border">
+        <div className="divide-y overflow-hidden rounded-lg border">
           {accounts.map((account) => (
             <div
               key={account.id}
-              className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
+              className="relative flex flex-col gap-2 px-4 py-3 transition-colors hover:bg-muted/50 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
             >
+              <AccountDetailsDialog
+                account={account}
+                balance={balances[account.id] ?? "0"}
+                currentUserId={currentUserId}
+              />
               <div className="flex min-w-0 flex-col gap-0.5">
                 <span className="truncate text-sm font-medium">
                   {account.name}
@@ -196,7 +198,7 @@ export default function AccountsPage() {
                     />
                   </span>
                 </div>
-                <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+                <div className="relative z-20 flex shrink-0 items-center gap-2 sm:gap-3">
                   <Button
                     variant="outline"
                     size="sm"
