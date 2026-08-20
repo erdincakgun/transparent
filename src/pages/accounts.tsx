@@ -1,6 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
-import { DownloadIcon, PencilLine, PlusIcon, Trash2Icon } from "lucide-react";
+import {
+  DownloadIcon,
+  PencilLine,
+  PlusIcon,
+  ReceiptTextIcon,
+  Trash2Icon,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLedger } from "@/components/ledger-provider";
@@ -9,17 +15,13 @@ import {
   AccountDetailsDialog,
   type Account,
 } from "@/components/account-details-dialog";
+import { BalanceAmount } from "@/components/balance-amount";
 import { downloadCsv } from "@/lib/csv";
 import { fetchAllRows } from "@/lib/pagination";
 import { useDocumentTitle } from "@/hooks/use-document-title";
 import supabase from "@/lib/supabase/client";
 
 type AccountBalance = { id: string; balance: string };
-
-const balanceFormat = new Intl.NumberFormat(undefined, {
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 4,
-});
 
 const exportColumns = ["id", "ledger_id", "name", "description", "created_by"];
 
@@ -204,9 +206,10 @@ export default function AccountsPage() {
               </div>
               <div className="flex items-center justify-between gap-3 sm:shrink-0">
                 <div className="flex min-w-0 flex-col gap-0.5 sm:items-end">
-                  <span className="text-sm font-medium tabular-nums">
-                    {balanceFormat.format(Number(balances[account.id] ?? 0))}
-                  </span>
+                  <BalanceAmount
+                    className="text-sm"
+                    balance={balances[account.id] ?? "0"}
+                  />
                   <span className="truncate text-xs text-muted-foreground">
                     opened by{" "}
                     <Actor
@@ -245,8 +248,10 @@ export default function AccountsPage() {
           ))}
         </div>
       ) : (
-        <div className="rounded-lg border p-8 text-center text-sm text-muted-foreground">
-          This ledger has no accounts yet
+        <div className="flex flex-col items-center gap-2 rounded-lg border p-8 text-center">
+          <ReceiptTextIcon className="size-6 text-muted-foreground" />
+          <p className="text-sm font-medium">This ledger has no accounts yet</p>
+          <p className="text-sm text-muted-foreground">An account is one person or pot the ledger keeps a balance for.</p>
         </div>
       )}
     </div>
