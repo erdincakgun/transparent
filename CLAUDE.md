@@ -206,7 +206,9 @@ that pattern.
 
 - `public.account_balances` (`001_account_balances.sql`) → `id, ledger_id, balance`, as
   *credits in minus debits out*. A **positive** balance means the account has received
-  more than it sent, so in settle-up terms it is the one that **pays**.
+  more than it sent, so in settle-up terms it is the one that **pays**. The UI never shows
+  that sign raw in a list — `BalanceAmount` says "owes" or "is owed" instead; see "The
+  palette".
 - `public.account_income_expense` (`012_transaction_kinds.sql`) → `id, ledger_id,
   income, expense`, the same shape of subquery as `account_balances` but summing
   **accruals only**: `income` is every accrual the account sat on the `to` side of,
@@ -362,15 +364,12 @@ in a `<nav aria-label="Ledger pages">` and the active one carries `aria-current=
 beside its `data-active` styling; the breadcrumb uses `BreadcrumbPage`, which is what
 carries `aria-current` there.
 
-**Colour is measured, not eyeballed.** Four tokens in `src/index.css` were moved off the
-shadcn defaults because the defaults miss: light `--muted-foreground` (4.34:1 over
-`--muted`), light `--destructive` (3.99:1 as text on `bg-destructive/10`, which is how
-the destructive button renders it), and `--ring` in both themes (2.59:1 light — a focus
-ring is a state indicator and 1.4.11 wants 3:1). `--input-border` is a **new** token: the
-boundary of a control is what says "you can type here", so it is held to 3:1, while
-`--border`/`--input` stay faint for dividers and fills. `Input`, `SelectTrigger` and the
-`outline` button variant use it. Any new colour pair gets checked the same way — the
-formula is in the 1.4.3 definition, and light-on-`--muted` is the pairing that usually
+**Colour is measured, not eyeballed, and never says anything on its own.** The palette
+and the arithmetic behind it are in "The palette" below; the rule that matters here is
+that every colour in this app repeats something already written in words — "owes" beside
+the amber figure, "Accrual" inside the amber badge — because 1.4.1 does not accept a hue
+as the only carrier of a fact. Any new pair gets checked against 4.5:1 for text and 3:1
+for a control boundary or state, and light-on-`--muted` is the pairing that usually
 fails.
 
 **Motion is opt-out.** A `prefers-reduced-motion` block in `src/index.css` collapses every
@@ -380,6 +379,54 @@ dialog zoom, the skeleton pulse.
 Verifying: drive the app at **320px** as ever, and read the Playwright accessibility
 snapshot rather than the screenshot — it is what shows a control whose name came out
 empty or a page with no heading. Local Supabase has to be up for anything past `/login`.
+
+### The palette
+
+The theme is built from **one hue, 264** — an indigo. It is `--primary`, it is `--ring`,
+and a trace of it is mixed into every neutral: the greys are not grey, they lean the way
+the brand does. That is what keeps a coloured UI from looking like colour dropped onto a
+grey one, and it is why `--background` in dark mode is `oklch(0.145 0.006 264)` rather
+than a flat `0.145 0 0`.
+
+Three colours carry meaning, and each is defined for both themes as a **text** colour
+first, because that is how this app uses them — a figure, a word, a badge, never a large
+filled surface:
+
+| token | reads as | where |
+|---|---|---|
+| `--primary` | the thing to do next | filled buttons, the active sidebar item, the settle-up play button, the "You" chip |
+| `--success` | money owed *to* you, and a done state | credit balances, payment badges, the settled-up empty state |
+| `--warning` | money you owe | debit balances, accrual badges |
+| `--destructive` | undoing something | delete/archive buttons, error text |
+
+They look unusual next to a normal status palette: the amber is nearer bronze and the
+green nearer pine in light mode, and both are pastel in dark. That is forced by the
+contrast requirement — a bright amber cannot be read as text on white, and a deep green
+cannot be read on near-black. **Do not "fix" them by brightening.** The numbers each value
+was picked against, for both themes: text on the page, on `--card`, on `--muted`, and on
+its own 10% tint (which is how the badges and the destructive button fill), all ≥ 4.5:1;
+`--primary-foreground` on `--primary` and on its hover mix ≥ 4.5:1; `--ring` and
+`--input-border` ≥ 3:1 against every surface they sit on.
+
+`--input-border` is this repo's own token, not a shadcn one: the boundary of a control is
+what says "you can type here", so 1.4.11 holds it to 3:1, while `--border`/`--input` stay
+faint for dividers and fills. `Input`, `SelectTrigger` and the `outline` button variant
+use it. The `default` button hovers by mixing `--foreground` into `--primary` rather than
+fading to `bg-primary/80` — fading a coloured fill towards the page washes it out and
+drops the label under 4.5:1, in light mode especially.
+
+**Two components own the semantics**, so the mapping lives in one place rather than in
+each page:
+
+- `BalanceAmount` / `standingOf` (`components/balance-amount.tsx`) turn a balance into
+  **owes / is owed / settled**. The sign is the least obvious number in the app —
+  `account_balances` is credits in minus debits out, so a *positive* balance is the
+  account that **pays** (`payer.balance > 0` in `002_settlement_transfers.sql`). The row
+  therefore shows the figure **unsigned** with the word beside it; the signed ledger value
+  is in the account's dialog, under "Ledger balance", and untouched in the CSV.
+- `KindBadge` (`components/kind-badge.tsx`) renders accrual vs payment as word + icon +
+  colour, in the transactions list, the transaction dialog, and the kind `Select` on the
+  create form — one badge, so the create form looks like the list it writes to.
 
 ### The MFA gate
 
@@ -523,6 +570,11 @@ The standalone create forms embed their own ledger `Select` wired to `selectLedg
 the target ledger can be switched without going back to the sidebar.
 
 ### Data-loading conventions
+
+An **empty list is a sentence, not a blank**: each of the four pages renders an icon, a
+line naming what is missing and a line saying what the thing *is* ("An account is one
+person or pot the ledger keeps a balance for"). Settle-up's is the exception that is
+green rather than muted — nothing to settle is the good outcome, not an absence.
 
 There is no query library. Every page/form does `useEffect` + a local `async load()`,
 guarded by a `cancelled` flag, keyed on `[ledgerLoading, ledgerId]`, with parallel reads
