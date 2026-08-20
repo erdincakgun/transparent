@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useLedger } from "@/components/ledger-provider";
 import { downloadCsv } from "@/lib/csv";
 import { fetchAllRows } from "@/lib/pagination";
+import { useDocumentTitle } from "@/hooks/use-document-title";
 import { trimAmount } from "@/lib/utils";
 import supabase from "@/lib/supabase/client";
 
@@ -28,6 +29,7 @@ const exportColumns = [
 ];
 
 export default function SettleUpPage() {
+  useDocumentTitle("Settle Up");
   const { activeLedger, loading: ledgerLoading } = useLedger();
   const [transfers, setTransfers] = useState<SettlementTransfer[]>([]);
   const [accountNames, setAccountNames] = useState<Record<string, string>>({});
@@ -134,9 +136,10 @@ export default function SettleUpPage() {
 
   return (
     <div className="flex flex-col gap-4">
+      <h1 className="sr-only">Settle Up</h1>
       <div className="flex flex-wrap items-center gap-2">
         <div className="flex min-w-0 flex-col gap-0.5">
-          <p className="text-sm text-muted-foreground">
+          <p role="status" className="text-sm text-muted-foreground">
             {loading
               ? "Loading transfers"
               : `${transfers.length} ${transfers.length === 1 ? "transfer" : "transfers"} to settle up`}
@@ -159,9 +162,11 @@ export default function SettleUpPage() {
       </div>
 
       {error ? (
-        <p className="text-sm text-destructive">{error}</p>
+        <p role="alert" className="text-sm text-destructive">
+          {error}
+        </p>
       ) : loading ? (
-        <div className="divide-y rounded-lg border">
+        <div aria-hidden="true" className="divide-y rounded-lg border">
           {[0, 1, 2].map((row) => (
             <div key={row} className="px-4 py-3">
               <Skeleton className="h-4 w-56" />
@@ -181,7 +186,10 @@ export default function SettleUpPage() {
               >
                 <div className="flex min-w-0 items-center gap-1.5 text-sm font-medium">
                   <span className="truncate">{fromName}</span>
+                  {/* Who pays whom is the whole answer this page gives, and
+                      the arrow saying it is hidden from assistive tech. */}
                   <ArrowRightIcon className="size-3.5 shrink-0 text-muted-foreground" />
+                  <span className="sr-only">pays</span>
                   <span className="truncate">{toName}</span>
                 </div>
                 <div className="flex items-center justify-between gap-3 sm:shrink-0">
@@ -192,7 +200,7 @@ export default function SettleUpPage() {
                     variant="outline"
                     size="sm"
                     className="max-sm:size-9"
-                    aria-label="Record this transfer"
+                    aria-label={`Record transfer from ${fromName} to ${toName}`}
                     nativeButton={false}
                     render={
                       <Link
