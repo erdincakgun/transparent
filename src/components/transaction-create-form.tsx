@@ -1,7 +1,12 @@
 import { cn } from "@/lib/utils";
 import { ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Field, FieldError, FieldGroup } from "@/components/ui/field";
+import {
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -157,13 +162,24 @@ export function TransactionCreateForm({
       <form onSubmit={handleSubmit}>
         <FieldGroup>
           <Field>
+            {/* A select trigger is a button, and a button's name is its
+                content — which here is the chosen ledger, not what the
+                choice is for. Naming it after both the label and itself
+                keeps "Ledger, Household" rather than one or the other. */}
+            <FieldLabel id="ledger-label" htmlFor="ledger">
+              Ledger
+            </FieldLabel>
             <Select
               value={ledgerId ?? null}
               onValueChange={(value: string | null) => {
                 if (value) selectLedger(value);
               }}
             >
-              <SelectTrigger className="w-full data-[size=default]:h-auto">
+              <SelectTrigger
+                id="ledger"
+                aria-labelledby="ledger-label ledger"
+                className="w-full data-[size=default]:h-auto"
+              >
                 <SelectValue className="line-clamp-none">
                   {(value: string | null) => {
                     const ledger = ledgers.find((item) => item.id === value);
@@ -231,51 +247,69 @@ export function TransactionCreateForm({
             <>
               <Field>
                 <div className="grid grid-cols-[1fr_auto] gap-2">
-                  <div className="flex flex-col gap-2">
-                    <Select
-                      value={fromAccountId}
-                      onValueChange={(value: string | null) =>
-                        setFromAccountId(value)
-                      }
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue>
-                          {(value: string | null) =>
-                            accounts.find((item) => item.id === value)?.name ??
-                            "From account"
-                          }
-                        </SelectValue>
-                      </SelectTrigger>
-                      <SelectContent>
-                        {accounts.map((account) => (
-                          <SelectItem key={account.id} value={account.id}>
-                            {account.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <Select
-                      value={toAccountId}
-                      onValueChange={(value: string | null) =>
-                        setToAccountId(value)
-                      }
-                    >
-                      <SelectTrigger className="w-full">
-                        <SelectValue>
-                          {(value: string | null) =>
-                            accounts.find((item) => item.id === value)?.name ??
-                            "To account"
-                          }
-                        </SelectValue>
-                      </SelectTrigger>
-                      <SelectContent>
-                        {accounts.map((account) => (
-                          <SelectItem key={account.id} value={account.id}>
-                            {account.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                  <div className="flex flex-col gap-4">
+                    <div className="flex flex-col gap-2">
+                      <FieldLabel id="from-label" htmlFor="from-account">
+                        From account
+                      </FieldLabel>
+                      <Select
+                        value={fromAccountId}
+                        onValueChange={(value: string | null) =>
+                          setFromAccountId(value)
+                        }
+                      >
+                        <SelectTrigger
+                          id="from-account"
+                          aria-labelledby="from-label from-account"
+                          className="w-full"
+                        >
+                          <SelectValue>
+                            {(value: string | null) =>
+                              accounts.find((item) => item.id === value)
+                                ?.name ?? "Select an account"
+                            }
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                          {accounts.map((account) => (
+                            <SelectItem key={account.id} value={account.id}>
+                              {account.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <FieldLabel id="to-label" htmlFor="to-account">
+                        To account
+                      </FieldLabel>
+                      <Select
+                        value={toAccountId}
+                        onValueChange={(value: string | null) =>
+                          setToAccountId(value)
+                        }
+                      >
+                        <SelectTrigger
+                          id="to-account"
+                          aria-labelledby="to-label to-account"
+                          className="w-full"
+                        >
+                          <SelectValue>
+                            {(value: string | null) =>
+                              accounts.find((item) => item.id === value)
+                                ?.name ?? "Select an account"
+                            }
+                          </SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                          {accounts.map((account) => (
+                            <SelectItem key={account.id} value={account.id}>
+                              {account.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
                   </div>
                   <Button
                     type="button"
@@ -294,13 +328,20 @@ export function TransactionCreateForm({
                 </div>
               </Field>
               <Field>
+                <FieldLabel id="kind-label" htmlFor="kind">
+                  Kind
+                </FieldLabel>
                 <Select
                   value={kind}
                   onValueChange={(value: Kind | null) => {
                     if (value) setKind(value);
                   }}
                 >
-                  <SelectTrigger className="w-full data-[size=default]:h-auto">
+                  <SelectTrigger
+                    id="kind"
+                    aria-labelledby="kind-label kind"
+                    className="w-full data-[size=default]:h-auto"
+                  >
                     <SelectValue>
                       {(value: Kind | null) => {
                         const selected = kinds.find(
@@ -339,23 +380,23 @@ export function TransactionCreateForm({
                 </Select>
               </Field>
               <Field>
+                <FieldLabel htmlFor="amount">Amount</FieldLabel>
                 <Input
                   id="amount"
                   name="amount"
                   type="number"
                   inputMode="decimal"
                   step="0.0001"
-                  placeholder="Enter an amount"
                   defaultValue={prefillAmount}
                   required
                 />
               </Field>
               <Field>
+                <FieldLabel htmlFor="description">Description</FieldLabel>
                 <Input
                   id="description"
                   name="description"
                   type="text"
-                  placeholder="Enter a description"
                   maxLength={1000}
                   defaultValue={prefillDescription}
                   required
