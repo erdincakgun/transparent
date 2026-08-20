@@ -206,9 +206,8 @@ that pattern.
 
 - `public.account_balances` (`001_account_balances.sql`) → `id, ledger_id, balance`, as
   *credits in minus debits out*. A **positive** balance means the account has received
-  more than it sent, so in settle-up terms it is the one that **pays**. The UI never shows
-  that sign raw in a list — `BalanceAmount` says "owes" or "is owed" instead; see "The
-  palette".
+  more than it sent, so in settle-up terms it is the one that **pays**. Lists render it
+  through `BalanceAmount`, signed (`+`/`−`) and in one colour; see "The palette".
 - `public.account_income_expense` (`012_transaction_kinds.sql`) → `id, ledger_id,
   income, expense`, the same shape of subquery as `account_balances` but summing
   **accruals only**: `income` is every accrual the account sat on the `to` side of,
@@ -366,11 +365,11 @@ carries `aria-current` there.
 
 **Colour is measured, not eyeballed, and never says anything on its own.** The palette
 and the arithmetic behind it are in "The palette" below; the rule that matters here is
-that every colour in this app repeats something already written in words — "owes" beside
-the amber figure, "Accrual" inside the amber badge — because 1.4.1 does not accept a hue
-as the only carrier of a fact. Any new pair gets checked against 4.5:1 for text and 3:1
-for a control boundary or state, and light-on-`--muted` is the pairing that usually
-fails.
+that every colour in this app repeats something already carried in glyphs or words — the
+word "Accrual" inside the gold badge, "settled up" beside the jade tick — because 1.4.1
+does not accept a hue as the only carrier of a fact. Any new pair gets checked against 4.5:1 for
+text and 3:1 for a control boundary or state, and light-on-`--muted` is the pairing that
+usually fails.
 
 **Motion is opt-out.** A `prefers-reduced-motion` block in `src/index.css` collapses every
 animation and transition (2.3.3); all of them here are decoration — the sidebar slide, the
@@ -382,48 +381,66 @@ empty or a page with no heading. Local Supabase has to be up for anything past `
 
 ### The palette
 
-The theme is built from **one hue, 264** — an indigo. It is `--primary`, it is `--ring`,
-and a trace of it is mixed into every neutral: the greys are not grey, they lean the way
-the brand does. That is what keeps a coloured UI from looking like colour dropped onto a
-grey one, and it is why `--background` in dark mode is `oklch(0.145 0.006 264)` rather
-than a flat `0.145 0 0`.
+The theme runs on **one hue, 295** — a violet. It is `--primary`, it is `--ring`, and a
+trace of it sits in every neutral: the greys are not grey, and `--background` is
+`oklch(0.98 0.01 295)` in light and `oklch(0.16 0.022 295)` in dark — a plum midnight
+rather than a flat black. Cards and popovers stay pure white in light mode so they lift
+off the tinted page.
 
-Three colours carry meaning, and each is defined for both themes as a **text** colour
+The three status hues are placed deliberately around the brand rather than pulled from a
+stock palette: **jade 170** and **gold 70** sit on the far side of the wheel from the
+violet, **rose 12** on its warm edge. Each is defined per theme as a **text** colour
 first, because that is how this app uses them — a figure, a word, a badge, never a large
 filled surface:
 
-| token | reads as | where |
-|---|---|---|
-| `--primary` | the thing to do next | filled buttons, the active sidebar item, the settle-up play button, the "You" chip |
-| `--success` | money owed *to* you, and a done state | credit balances, payment badges, the settled-up empty state |
-| `--warning` | money you owe | debit balances, accrual badges |
-| `--destructive` | undoing something | delete/archive buttons, error text |
+| token | light | dark | reads as |
+|---|---|---|---|
+| `--primary` | `#742ad9` | `#ad8dfd` | the thing to do next |
+| `--success` | `#04755b` | `#15e5b4` | a payment, and a done state |
+| `--warning` | `#915b02` | `#febe4e` | an accrual |
+| `--destructive` | `#c7054a` | `#fe6f87` | undoing something |
 
-They look unusual next to a normal status palette: the amber is nearer bronze and the
-green nearer pine in light mode, and both are pastel in dark. That is forced by the
-contrast requirement — a bright amber cannot be read as text on white, and a deep green
-cannot be read on near-black. **Do not "fix" them by brightening.** The numbers each value
-was picked against, for both themes: text on the page, on `--card`, on `--muted`, and on
-its own 10% tint (which is how the badges and the destructive button fill), all ≥ 4.5:1;
-`--primary-foreground` on `--primary` and on its hover mix ≥ 4.5:1; `--ring` and
-`--input-border` ≥ 3:1 against every surface they sit on.
+The same colour is deep in light mode and luminous in dark for one reason: it is read as
+text, and the surface behind it flips. **Do not "fix" the light values by brightening
+them** — a bright gold cannot be read on white. Every value was measured before it was
+used: 80 pairs across both themes, all passing, none outside sRGB (a clipped oklch is
+silently clamped, so what you write stops being what you see). What each was measured
+against: text on the page, on `--card`, on `--muted`, and on its own 10% tint (which is
+how the badges and the destructive button fill), all ≥ 4.5:1; `--primary-foreground` on
+`--primary`, on **both ends of its gradient**, and on its hover mix ≥ 4.5:1; `--ring` and
+`--input-border` ≥ 3:1 against every surface they sit on, including the backdrop below.
 
 `--input-border` is this repo's own token, not a shadcn one: the boundary of a control is
 what says "you can type here", so 1.4.11 holds it to 3:1, while `--border`/`--input` stay
 faint for dividers and fills. `Input`, `SelectTrigger` and the `outline` button variant
-use it. The `default` button hovers by mixing `--foreground` into `--primary` rather than
-fading to `bg-primary/80` — fading a coloured fill towards the page washes it out and
-drops the label under 4.5:1, in light mode especially.
+use it.
+
+Two flourishes, both cheap and both measured:
+
+- **The `default` button is a gradient**, `--primary` to 18% of the way toward
+  `--foreground` — darker at the bottom in light mode, lighter in dark — under a shadow
+  tinted with `--primary` rather than black, which is what makes it read as lit rather
+  than dropped. It hovers by mixing further toward `--foreground`; `bg-primary/80` would
+  hover *towards the page*, washing the fill out and dropping the label under 4.5:1.
+- **`.aurora`** (in `src/index.css`) is two radial lights — violet from the top left, jade
+  from the top right, peaking at 8% and 6% — behind the full-screen forms, which are
+  otherwise a card on a flat field. It is `background-image` only, so the painted
+  `--background` still decides what the page is; the ratios were checked at the peak of
+  each light, not at its average.
 
 **Two components own the semantics**, so the mapping lives in one place rather than in
 each page:
 
-- `BalanceAmount` / `standingOf` (`components/balance-amount.tsx`) turn a balance into
-  **owes / is owed / settled**. The sign is the least obvious number in the app —
-  `account_balances` is credits in minus debits out, so a *positive* balance is the
-  account that **pays** (`payer.balance > 0` in `002_settlement_transfers.sql`). The row
-  therefore shows the figure **unsigned** with the word beside it; the signed ledger value
-  is in the account's dialog, under "Ledger balance", and untouched in the CSV.
+- `BalanceAmount` (`components/balance-amount.tsx`) renders a balance **signed**
+  (`signDisplay: "exceptZero"`, so a credit reads `+1,250.50`) and in **one colour**. A
+  credit and a debit are the same quantity pointing two ways, not two kinds of thing;
+  colouring the sign implies a judgement the ledger does not make, and the sign already
+  says everything a hue would. What a sign cannot carry is *which way round it is* — the
+  balance is credits in minus debits out, so a **positive** balance is the account that
+  pays (`payer.balance > 0` in `002_settlement_transfers.sql`) — so "owes this" / "is owed
+  this" rides along as `sr-only` text, where it costs a screen reader nothing and a
+  sighted reader no space. **The status hues are for kinds, not quantities**: `--warning`
+  and `--success` mark accrual vs payment and the settled-up state, never a figure.
 - `KindBadge` (`components/kind-badge.tsx`) renders accrual vs payment as word + icon +
   colour, in the transactions list, the transaction dialog, and the kind `Select` on the
   create form — one badge, so the create form looks like the list it writes to.
