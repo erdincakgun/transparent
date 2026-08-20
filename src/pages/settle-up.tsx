@@ -1,6 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
-import { ArrowRightIcon, DownloadIcon, Play } from "lucide-react";
+import {
+  ArrowRightIcon,
+  CircleCheckIcon,
+  DownloadIcon,
+  HandCoinsIcon,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLedger } from "@/components/ledger-provider";
@@ -196,8 +201,9 @@ export default function SettleUpPage() {
                   <span className="text-sm font-medium tabular-nums">
                     {amountFormat.format(Number(transfer.amount))}
                   </span>
+                  {/* The one thing this page asks you to do, so it is the
+                      one filled button on it. */}
                   <Button
-                    variant="outline"
                     size="sm"
                     className="max-sm:size-9"
                     aria-label={`Record transfer from ${fromName} to ${toName}`}
@@ -217,7 +223,7 @@ export default function SettleUpPage() {
                       />
                     }
                   >
-                    <Play />
+                    <HandCoinsIcon />
                   </Button>
                 </div>
               </div>
@@ -225,8 +231,16 @@ export default function SettleUpPage() {
           })}
         </div>
       ) : (
-        <div className="rounded-lg border p-8 text-center text-sm text-muted-foreground">
-          Everyone in this ledger is settled up
+        // Nothing to settle is the one empty state that means everything
+        // worked, so it reads as an answer rather than an absence.
+        <div className="flex flex-col items-center gap-2 rounded-lg border border-success/30 bg-success/5 p-8 text-center">
+          <CircleCheckIcon className="size-6 text-success" />
+          <p className="text-sm font-medium text-success">
+            Everyone in this ledger is settled up
+          </p>
+          <p className="text-sm text-muted-foreground">
+            Every account sits at zero — nobody owes anybody.
+          </p>
         </div>
       )}
     </div>
