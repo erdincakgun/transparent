@@ -257,7 +257,8 @@ API, so there is no way to look a person up. The sidebar user menu offers "Copy 
   refuses either at `aal1`.
 - Adding a dashboard route means touching **four** places: the lazy import in
   `src/lazy-pages.tsx`, the `<Route>` in `main.tsx`, the breadcrumb `pageNames` map in
-  `layouts/dashboard.tsx`, and `data.navItems` in `components/app-sidebar.tsx`.
+  `layouts/dashboard.tsx`, and `data.navItems` in `components/app-sidebar.tsx`. The page
+  itself then owes a `useDocumentTitle(...)` call and one `sr-only` `<h1>` (below).
 - **Every route component is code-split.** `src/lazy-pages.tsx` holds the `React.lazy(()
   => import(...))` declaration for each page and for `Dashboard`; `main.tsx` wraps every
   route's `element` in `<Suspense fallback={null}>` via a local `withSuspense` helper.
@@ -317,6 +318,68 @@ API, so there is no way to look a person up. The sidebar user menu offers "Copy 
   goes to `signInWithOtp` / `signInWithPasskey` as `options.captchaToken`), then **TOTP
   MFA** either way. One shared Supabase client, default export from
   `src/lib/supabase/client.ts`.
+
+### Accessibility
+
+The target is WCAG 2.1 AA, and the habits below are the ones a new screen is most
+likely to break. Note the shape of them: the same "state it, don't imply it" the rest
+of this app already applies to money.
+
+**Every page says what it is, twice.** `useDocumentTitle` (`src/hooks/use-document-title.ts`)
+writes `"<page> · Transparent"`; nothing here ever reloads the document, so without the
+call every route would answer "Transparent" (2.4.2). Beside it each page renders exactly
+one `<h1>` — **visible** on the standalone screens, which otherwise open with no title at
+all, and `sr-only` on the four dashboard pages, where the breadcrumb already puts the
+same word on screen and a second copy would only repeat it.
+
+**Every field has a real `<label>`; a placeholder is not one.** Placeholder text vanishes
+at the first keystroke — exactly when someone wants to re-check what the field was for
+(3.3.2) — so `FieldLabel` + `htmlFor` is mandatory and the placeholder is kept only where
+it adds something the label does not (a format, an example). A **select** is a `<button>`
+under Base UI, whose name would otherwise be the chosen value alone, so it takes
+`id` plus `aria-labelledby="<label-id> <trigger-id>"`: the pair reads "Ledger, Household"
+rather than one half or the other. Non-controls that look like fields — the read-only
+ledger card on the delete/describe screens — get a `FieldTitle`, which is the same styling
+in a `div` that does not claim to label anything focusable. The login email field also
+carries `autoComplete="email"` (1.3.5).
+
+**A row's buttons name their row.** Twenty identical "Edit description" buttons say
+nothing about which account they edit (2.4.4), so each takes an `aria-label` naming its
+row — account name, transaction description, passkey name, user id. The same goes for
+meaning carried by a glyph: lucide marks its icons `aria-hidden` itself, so the `→`
+between two accounts is followed by an `sr-only` "to" (or "pays" on settle-up).
+
+**The list pages announce their own loading.** The row count is `role="status"`, the error
+line is `role="alert"`, and the skeleton block is `aria-hidden` — the status line already
+says "Loading accounts", and three grey bars announced as nothing are noise (4.1.3). Form
+errors already had this: `FieldError` ships `role="alert"`.
+
+**The dashboard has a skip link.** The sidebar and header repeat on all four pages, so
+`layouts/dashboard.tsx` opens with an `sr-only focus:not-sr-only` link to `#main-content`
+— the id and `tabIndex={-1}` sit on the content wrapper *inside* `SidebarInset`, not on
+the `<main>` itself, so the jump clears the header too (2.4.1). The sidebar's links live
+in a `<nav aria-label="Ledger pages">` and the active one carries `aria-current="page"`
+beside its `data-active` styling; the breadcrumb uses `BreadcrumbPage`, which is what
+carries `aria-current` there.
+
+**Colour is measured, not eyeballed.** Four tokens in `src/index.css` were moved off the
+shadcn defaults because the defaults miss: light `--muted-foreground` (4.34:1 over
+`--muted`), light `--destructive` (3.99:1 as text on `bg-destructive/10`, which is how
+the destructive button renders it), and `--ring` in both themes (2.59:1 light — a focus
+ring is a state indicator and 1.4.11 wants 3:1). `--input-border` is a **new** token: the
+boundary of a control is what says "you can type here", so it is held to 3:1, while
+`--border`/`--input` stay faint for dividers and fills. `Input`, `SelectTrigger` and the
+`outline` button variant use it. Any new colour pair gets checked the same way — the
+formula is in the 1.4.3 definition, and light-on-`--muted` is the pairing that usually
+fails.
+
+**Motion is opt-out.** A `prefers-reduced-motion` block in `src/index.css` collapses every
+animation and transition (2.3.3); all of them here are decoration — the sidebar slide, the
+dialog zoom, the skeleton pulse.
+
+Verifying: drive the app at **320px** as ever, and read the Playwright accessibility
+snapshot rather than the screenshot — it is what shows a control whose name came out
+empty or a page with no heading. Local Supabase has to be up for anything past `/login`.
 
 ### The MFA gate
 
@@ -553,8 +616,9 @@ every other prefill; deleting is a second visit.
 Conventions: `@/*` → `src/*`. Filenames kebab-case. Pages are default exports under
 `src/pages/`, layouts default exports under `src/layouts/`, components are named exports
 under `src/components/`, untouched shadcn primitives stay in `src/components/ui/`.
-Standalone (non-dashboard) routes follow a fixed split: an 11-line page that centres the
-viewport wrapping a `*-form` component that holds all logic.
+Standalone (non-dashboard) routes follow a fixed split: a page of a dozen lines that
+centres the viewport — a `<main>` holding `useDocumentTitle`, one visible `<h1>` and
+nothing else — wrapping a `*-form` component that holds all the logic.
 
 ## Known gaps
 
