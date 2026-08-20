@@ -19,21 +19,14 @@ import { useEffect, useState } from "react";
 import supabase from "@/lib/supabase/client";
 import { Link, useNavigate, useSearchParams } from "react-router";
 import { useLedger } from "@/components/ledger-provider";
+import { KindBadge } from "@/components/kind-badge";
 
 type Account = { id: string; name: string };
 type Kind = "accrual" | "payment";
 
-const kinds: { value: Kind; label: string; hint: string }[] = [
-  {
-    value: "accrual",
-    label: "Accrual",
-    hint: "a cost one account covered for another",
-  },
-  {
-    value: "payment",
-    label: "Payment",
-    hint: "settling a balance an accrual created",
-  },
+const kinds: { value: Kind; hint: string }[] = [
+  { value: "accrual", hint: "a cost one account covered for another" },
+  { value: "payment", hint: "settling a balance an accrual created" },
 ];
 
 export function TransactionCreateForm({
@@ -351,10 +344,11 @@ export function TransactionCreateForm({
                         if (!selected) return "Select a kind";
 
                         return (
-                          <div className="grid flex-1 text-left leading-tight">
-                            <span className="truncate font-medium">
-                              {selected.label}
-                            </span>
+                          <div className="grid flex-1 gap-1 text-left leading-tight">
+                            <KindBadge
+                              kind={selected.value}
+                              className="w-fit"
+                            />
                             <span className="truncate text-xs text-muted-foreground">
                               {selected.hint}
                             </span>
@@ -366,10 +360,8 @@ export function TransactionCreateForm({
                   <SelectContent>
                     {kinds.map((item) => (
                       <SelectItem key={item.value} value={item.value}>
-                        <div className="grid flex-1 text-left leading-tight">
-                          <span className="truncate font-medium">
-                            {item.label}
-                          </span>
+                        <div className="grid flex-1 gap-1 text-left leading-tight">
+                          <KindBadge kind={item.value} className="w-fit" />
                           <span className="truncate text-xs text-muted-foreground">
                             {item.hint}
                           </span>
