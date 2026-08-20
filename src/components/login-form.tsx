@@ -4,6 +4,7 @@ import {
   Field,
   FieldError,
   FieldGroup,
+  FieldLabel,
   FieldSeparator,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -101,7 +102,9 @@ export function LoginForm({
           {emailSent ? (
             <>
               <Field>
-                <p className="text-center text-sm text-muted-foreground">
+                {/* The form it replaces is gone from under the cursor, so
+                    this has to announce itself (4.1.3). */}
+                <p role="status" className="text-center text-sm text-muted-foreground">
                   Check your inbox
                 </p>
               </Field>
@@ -109,11 +112,18 @@ export function LoginForm({
           ) : (
             <>
               <Field>
+                {/* A placeholder is not a label: it is gone the moment you
+                    type, which is exactly when you want to check what the
+                    field was for (3.3.2). `autocomplete` is what lets a
+                    browser fill it for someone who finds typing costly
+                    (1.3.5). */}
+                <FieldLabel htmlFor="email">Email address</FieldLabel>
                 <Input
                   id="email"
                   name="email"
                   type="email"
-                  placeholder="Enter your email address"
+                  autoComplete="email"
+                  placeholder="you@example.com"
                   required
                 />
               </Field>
