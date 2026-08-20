@@ -11,6 +11,7 @@ import {
 } from "@/components/account-details-dialog";
 import { downloadCsv } from "@/lib/csv";
 import { fetchAllRows } from "@/lib/pagination";
+import { useDocumentTitle } from "@/hooks/use-document-title";
 import supabase from "@/lib/supabase/client";
 
 type AccountBalance = { id: string; balance: string };
@@ -23,6 +24,7 @@ const balanceFormat = new Intl.NumberFormat(undefined, {
 const exportColumns = ["id", "ledger_id", "name", "description", "created_by"];
 
 export default function AccountsPage() {
+  useDocumentTitle("Accounts");
   const { activeLedger, loading: ledgerLoading } = useLedger();
   const [accounts, setAccounts] = useState<Account[]>([]);
   const [balances, setBalances] = useState<Record<string, string>>({});
@@ -131,9 +133,15 @@ export default function AccountsPage() {
 
   return (
     <div className="flex flex-col gap-4">
+      {/* The breadcrumb names the page for anyone who can see it; this is the
+          same name as a heading, which is what "jump to the main heading"
+          finds. Hidden because repeating it on screen would say it twice. */}
+      <h1 className="sr-only">Accounts</h1>
       <div className="flex flex-wrap items-center gap-2">
         <div className="flex min-w-0 flex-col gap-0.5">
-          <p className="text-sm text-muted-foreground">
+          {/* 4.1.3: the row count is the result of the load, and it arrives
+              without focus moving anywhere. */}
+          <p role="status" className="text-sm text-muted-foreground">
             {loading
               ? "Loading accounts"
               : `${accounts.length} ${accounts.length === 1 ? "account" : "accounts"}`}
@@ -161,9 +169,11 @@ export default function AccountsPage() {
       </div>
 
       {error ? (
-        <p className="text-sm text-destructive">{error}</p>
+        <p role="alert" className="text-sm text-destructive">
+          {error}
+        </p>
       ) : loading ? (
-        <div className="divide-y rounded-lg border">
+        <div aria-hidden="true" className="divide-y rounded-lg border">
           {[0, 1, 2].map((row) => (
             <div key={row} className="px-4 py-3">
               <Skeleton className="h-4 w-40" />
@@ -210,7 +220,10 @@ export default function AccountsPage() {
                     variant="outline"
                     size="sm"
                     className="max-sm:size-9"
-                    aria-label="Edit description"
+                    // A row of identical "Edit description" buttons tells a
+                    // screen reader nothing about which account it edits
+                    // (2.4.4), so each one names its own.
+                    aria-label={`Edit description for ${account.name}`}
                     nativeButton={false}
                     render={<Link to={`/accounts/describe/${account.id}`} />}
                   >
@@ -220,7 +233,7 @@ export default function AccountsPage() {
                     variant="destructive"
                     size="sm"
                     className="max-sm:size-9"
-                    aria-label="Delete account"
+                    aria-label={`Delete account ${account.name}`}
                     nativeButton={false}
                     render={<Link to={`/accounts/delete/${account.id}`} />}
                   >
