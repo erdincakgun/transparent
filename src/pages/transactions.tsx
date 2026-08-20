@@ -17,6 +17,7 @@ import {
 } from "@/components/transaction-details-dialog";
 import { downloadCsv } from "@/lib/csv";
 import { fetchAllRows } from "@/lib/pagination";
+import { useDocumentTitle } from "@/hooks/use-document-title";
 import { trimAmount } from "@/lib/utils";
 import supabase from "@/lib/supabase/client";
 
@@ -44,6 +45,7 @@ const exportColumns = [
 ];
 
 export default function TransactionsPage() {
+  useDocumentTitle("Transactions");
   const { activeLedger, loading: ledgerLoading } = useLedger();
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [accountNames, setAccountNames] = useState<Record<string, string>>({});
@@ -154,9 +156,10 @@ export default function TransactionsPage() {
 
   return (
     <div className="flex flex-col gap-4">
+      <h1 className="sr-only">Transactions</h1>
       <div className="flex flex-wrap items-center gap-2">
         <div className="flex min-w-0 flex-col gap-0.5">
-          <p className="text-sm text-muted-foreground">
+          <p role="status" className="text-sm text-muted-foreground">
             {loading
               ? "Loading transactions"
               : `${transactions.length} ${transactions.length === 1 ? "transaction" : "transactions"}`}
@@ -187,9 +190,11 @@ export default function TransactionsPage() {
       </div>
 
       {error ? (
-        <p className="text-sm text-destructive">{error}</p>
+        <p role="alert" className="text-sm text-destructive">
+          {error}
+        </p>
       ) : loading ? (
-        <div className="divide-y rounded-lg border">
+        <div aria-hidden="true" className="divide-y rounded-lg border">
           {[0, 1, 2].map((row) => (
             <div key={row} className="px-4 py-3">
               <Skeleton className="h-4 w-56" />
@@ -214,7 +219,12 @@ export default function TransactionsPage() {
                   <span className="truncate">
                     {accountNames[transaction.from_account_id]}
                   </span>
+                  {/* The arrow is the only thing saying which way the money
+                      went, and lucide hides its icons from assistive tech —
+                      so the direction is spelled out for anyone not seeing
+                      it (1.3.1, 1.3.3). */}
                   <ArrowRightIcon className="size-3.5 shrink-0 text-muted-foreground" />
+                  <span className="sr-only">to</span>
                   <span className="truncate">
                     {accountNames[transaction.to_account_id]}
                   </span>
@@ -246,7 +256,9 @@ export default function TransactionsPage() {
                     variant="outline"
                     size="sm"
                     className="max-sm:size-9"
-                    aria-label="Duplicate transaction"
+                    // One "Duplicate transaction" per row is indistinguishable
+                    // from the next when read out of context (2.4.4).
+                    aria-label={`Duplicate transaction: ${transaction.description}`}
                     nativeButton={false}
                     render={
                       <Link
@@ -269,7 +281,7 @@ export default function TransactionsPage() {
                     variant="outline"
                     size="sm"
                     className="max-sm:size-9"
-                    aria-label="Revert transaction"
+                    aria-label={`Revert transaction: ${transaction.description}`}
                     nativeButton={false}
                     render={
                       <Link
