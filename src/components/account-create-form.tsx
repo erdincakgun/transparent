@@ -1,6 +1,11 @@
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Field, FieldError, FieldGroup } from "@/components/ui/field";
+import {
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -79,13 +84,24 @@ export function AccountCreateForm({
       <form onSubmit={handleSubmit}>
         <FieldGroup>
           <Field>
+            {/* A select trigger is a button, and a button's name is its
+                content — which here is the chosen ledger, not what the
+                choice is for. Naming it after both the label and itself
+                keeps "Ledger, Household" rather than one or the other. */}
+            <FieldLabel id="ledger-label" htmlFor="ledger">
+              Ledger
+            </FieldLabel>
             <Select
               value={ledgerId}
               onValueChange={(value: string | null) => {
                 if (value) selectLedger(value);
               }}
             >
-              <SelectTrigger className="w-full data-[size=default]:h-auto">
+              <SelectTrigger
+                id="ledger"
+                aria-labelledby="ledger-label ledger"
+                className="w-full data-[size=default]:h-auto"
+              >
                 <SelectValue className="line-clamp-none">
                   {(value: string | null) => {
                     const ledger = ledgers.find((item) => item.id === value);
@@ -132,21 +148,23 @@ export function AccountCreateForm({
             </Select>
           </Field>
           <Field>
+            <FieldLabel htmlFor="name">Account name</FieldLabel>
             <Input
               id="name"
               name="name"
               type="text"
-              placeholder="Enter an account name"
               maxLength={200}
               required
             />
           </Field>
           <Field>
+            <FieldLabel htmlFor="description">
+              Description (optional)
+            </FieldLabel>
             <Input
               id="description"
               name="description"
               type="text"
-              placeholder="Enter a description (optional)"
               maxLength={1000}
             />
           </Field>
