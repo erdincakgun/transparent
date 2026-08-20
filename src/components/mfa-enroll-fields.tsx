@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Field, FieldDescription } from "@/components/ui/field";
+import { Field, FieldDescription, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { Copy, CopyCheck } from "lucide-react";
@@ -48,6 +48,7 @@ export function MfaEnrollFields({
       ) : null}
       {secret ? (
         <Field>
+          <FieldLabel htmlFor="secret">Setup key</FieldLabel>
           <div className="flex items-center gap-2">
             <Input
               id="secret"
@@ -73,6 +74,7 @@ export function MfaEnrollFields({
         </Field>
       ) : null}
       <Field>
+        <FieldLabel htmlFor="code">Six-digit code from the app</FieldLabel>
         <Input
           id="code"
           name="code"
@@ -80,7 +82,7 @@ export function MfaEnrollFields({
           inputMode="numeric"
           autoComplete="one-time-code"
           maxLength={6}
-          placeholder="Enter the six digits from your app"
+          placeholder="123456"
           disabled={!factorId}
           required
           autoFocus
