@@ -7,6 +7,7 @@ import { useLedger } from "@/components/ledger-provider";
 import { Actor } from "@/components/actor";
 import { downloadCsv } from "@/lib/csv";
 import { fetchAllRows } from "@/lib/pagination";
+import { useDocumentTitle } from "@/hooks/use-document-title";
 import supabase from "@/lib/supabase/client";
 
 type LedgerUser = { user_id: string; added_by: string; added_at: string };
@@ -20,6 +21,7 @@ const dateFormat = new Intl.DateTimeFormat(undefined, {
 const exportColumns = ["ledger_id", "user_id", "added_by", "added_at"];
 
 export default function UsersPage() {
+  useDocumentTitle("Users");
   const { activeLedger, loading: ledgerLoading } = useLedger();
   const [users, setUsers] = useState<LedgerUser[]>([]);
   const [ledgerCreatedBy, setLedgerCreatedBy] = useState<string>();
@@ -118,9 +120,10 @@ export default function UsersPage() {
 
   return (
     <div className="flex flex-col gap-4">
+      <h1 className="sr-only">Users</h1>
       <div className="flex flex-wrap items-center gap-2">
         <div className="flex min-w-0 flex-col gap-0.5">
-          <p className="text-sm text-muted-foreground">
+          <p role="status" className="text-sm text-muted-foreground">
             {loading
               ? "Loading users"
               : `${users.length} ${users.length === 1 ? "user" : "users"}`}
@@ -154,9 +157,11 @@ export default function UsersPage() {
       </div>
 
       {error ? (
-        <p className="text-sm text-destructive">{error}</p>
+        <p role="alert" className="text-sm text-destructive">
+          {error}
+        </p>
       ) : loading ? (
-        <div className="divide-y rounded-lg border">
+        <div aria-hidden="true" className="divide-y rounded-lg border">
           {[0, 1, 2].map((row) => (
             <div key={row} className="px-4 py-3">
               <Skeleton className="h-4 w-72" />
@@ -185,21 +190,32 @@ export default function UsersPage() {
                   <>
                     <span className="text-sm text-muted-foreground">You</span>
                     {users.length === 1 ? (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="max-sm:h-9"
-                        disabled
-                        title="A ledger has to keep at least one member"
-                      >
-                        <LogOutIcon />
-                        Leave
-                      </Button>
+                      <>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="max-sm:h-9"
+                          disabled
+                          title="A ledger has to keep at least one member"
+                          aria-describedby="leave-blocked"
+                        >
+                          <LogOutIcon />
+                          Leave
+                        </Button>
+                        {/* `title` is a hover affordance, and a disabled
+                            button cannot be focused to reach one by keyboard
+                            either — so the reason is also in the row as text
+                            only a screen reader reads out. */}
+                        <span id="leave-blocked" className="sr-only">
+                          A ledger has to keep at least one member
+                        </span>
+                      </>
                     ) : (
                       <Button
                         variant="destructive"
                         size="sm"
                         className="max-sm:h-9"
+                        aria-label="Leave this ledger"
                         nativeButton={false}
                         render={<Link to={`/users/delete/${user.user_id}`} />}
                       >
@@ -213,6 +229,9 @@ export default function UsersPage() {
                     variant="destructive"
                     size="sm"
                     className="max-sm:h-9"
+                    // Every row's button says just "Delete"; the user id is
+                    // all that tells one row from the next (2.4.4).
+                    aria-label={`Delete user ${user.user_id}`}
                     nativeButton={false}
                     render={<Link to={`/users/delete/${user.user_id}`} />}
                   >
