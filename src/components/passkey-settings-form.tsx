@@ -6,6 +6,7 @@ import {
   FieldDescription,
   FieldError,
   FieldGroup,
+  FieldLabel,
   FieldTitle,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -156,13 +157,13 @@ export function PasskeySettingsForm({
             >
               <FieldGroup>
                 <Field>
+                  <FieldLabel htmlFor="name">Passkey name</FieldLabel>
                   <Input
                     id="name"
                     name="name"
                     type="text"
                     maxLength={120}
                     defaultValue={passkey.friendly_name ?? ""}
-                    placeholder="Name this passkey"
                     required
                     autoFocus
                   />
@@ -201,11 +202,14 @@ export function PasskeySettingsForm({
                     : `Added ${dateFormat.format(new Date(passkey.created_at))}`}
                 </FieldDescription>
               </FieldContent>
+              {/* Every row repeats "Rename" and "Remove"; the passkey's own
+                  name is the only thing telling one from another (2.4.4). */}
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 className="shrink-0 max-sm:h-9"
+                aria-label={`Rename ${passkey.friendly_name ?? "passkey"}`}
                 disabled={busy}
                 onClick={() => setRenamingId(passkey.id)}
               >
@@ -216,6 +220,7 @@ export function PasskeySettingsForm({
                 variant="destructive"
                 size="sm"
                 className="shrink-0 max-sm:h-9"
+                aria-label={`Remove ${passkey.friendly_name ?? "passkey"}`}
                 disabled={busy}
                 onClick={() => handleRemove(passkey.id)}
               >
