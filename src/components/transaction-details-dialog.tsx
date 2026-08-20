@@ -8,6 +8,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { DetailField } from "@/components/detail-field";
+import { KindBadge } from "@/components/kind-badge";
 
 export type Transaction = {
   id: string;
@@ -61,8 +62,8 @@ export function TransactionDetailsDialog({
             <span className="sr-only">to</span>
             <span className="break-words">{toName}</span>
           </DialogTitle>
-          <DialogDescription>
-            <span className="capitalize">{transaction.kind}</span> ·{" "}
+          <DialogDescription className="flex flex-wrap items-center gap-1.5">
+            <KindBadge kind={transaction.kind} />
             {dateFormat.format(new Date(transaction.created_at))}
           </DialogDescription>
         </DialogHeader>
