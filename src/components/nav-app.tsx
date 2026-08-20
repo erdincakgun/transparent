@@ -21,22 +21,28 @@ export function NavItems({
   return (
     <SidebarGroup>
       <SidebarMenu>
-        {projects.map((item) => (
-          <SidebarMenuItem key={item.name}>
-            <SidebarMenuButton
-              isActive={
-                item.url === "/"
-                  ? pathname === "/"
-                  : pathname === item.url || pathname.startsWith(`${item.url}/`)
-              }
-              tooltip={item.name}
-              render={<Link to={item.url} />}
-            >
-              {item.icon}
-              <span>{item.name}</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        ))}
+        {projects.map((item) => {
+          const active =
+            item.url === "/"
+              ? pathname === "/"
+              : pathname === item.url || pathname.startsWith(`${item.url}/`);
+
+          return (
+            <SidebarMenuItem key={item.name}>
+              <SidebarMenuButton
+                isActive={active}
+                // `data-active` is a styling hook; `aria-current` is the same
+                // fact told to a screen reader, which cannot see the highlight.
+                aria-current={active ? "page" : undefined}
+                tooltip={item.name}
+                render={<Link to={item.url} />}
+              >
+                {item.icon}
+                <span>{item.name}</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          );
+        })}
       </SidebarMenu>
     </SidebarGroup>
   );
