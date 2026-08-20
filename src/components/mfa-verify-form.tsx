@@ -1,6 +1,11 @@
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
-import { Field, FieldError, FieldGroup } from "@/components/ui/field";
+import {
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { useEffect, useState } from "react";
 import supabase from "@/lib/supabase/client";
@@ -91,6 +96,7 @@ export function MfaVerifyForm({
             </p>
           </Field>
           <Field>
+            <FieldLabel htmlFor="code">Six-digit code from the app</FieldLabel>
             <Input
               id="code"
               name="code"
@@ -98,7 +104,7 @@ export function MfaVerifyForm({
               inputMode="numeric"
               autoComplete="one-time-code"
               maxLength={6}
-              placeholder="Enter the six digits from your app"
+              placeholder="123456"
               disabled={!factorIds.length}
               required
               autoFocus
