@@ -1,6 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
-import { DownloadIcon, LogOutIcon, PlusIcon, Trash2Icon } from "lucide-react";
+import {
+  DownloadIcon,
+  LogOutIcon,
+  PlusIcon,
+  Trash2Icon,
+  UsersIcon,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLedger } from "@/components/ledger-provider";
@@ -188,7 +194,9 @@ export default function UsersPage() {
               <div className="flex items-center justify-end gap-3 sm:shrink-0">
                 {user.user_id === currentUserId ? (
                   <>
-                    <span className="text-sm text-muted-foreground">You</span>
+                    <span className="shrink-0 rounded-sm border border-primary/30 bg-primary/10 px-1.5 py-px text-xs font-medium text-primary">
+                      You
+                    </span>
                     {users.length === 1 ? (
                       <>
                         <Button
@@ -244,8 +252,10 @@ export default function UsersPage() {
           ))}
         </div>
       ) : (
-        <div className="rounded-lg border p-8 text-center text-sm text-muted-foreground">
-          This ledger has no users yet
+        <div className="flex flex-col items-center gap-2 rounded-lg border p-8 text-center">
+          <UsersIcon className="size-6 text-muted-foreground" />
+          <p className="text-sm font-medium">This ledger has no users yet</p>
+          <p className="text-sm text-muted-foreground">Members are added by user ID — theirs is in their sidebar menu.</p>
         </div>
       )}
     </div>
