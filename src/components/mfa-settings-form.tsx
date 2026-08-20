@@ -115,6 +115,8 @@ export function MfaSettingsForm({
               type="button"
               variant="destructive"
               size="sm"
+              className="max-sm:h-9"
+              aria-label={`Remove ${factor.friendly_name ?? "authenticator"}`}
               disabled={factors.length === 1 || !!removingId}
               onClick={() => handleRemove(factor.id)}
             >
