@@ -20,7 +20,6 @@ import { useEffect, useState } from "react";
 import supabase from "@/lib/supabase/client";
 import { Link, useNavigate, useParams } from "react-router";
 import { useLedger } from "@/components/ledger-provider";
-import { standingOf } from "@/components/balance-amount";
 import {
   listVerifiedTotpFactors,
   mfaErrorMessage,
@@ -217,7 +216,7 @@ export function AccountDeleteForm({
                 <FieldDescription>
                   {settled
                     ? "The account keeps its transactions. It can no longer send or receive."
-                    : `This account ${standingOf(balance) === "owes" ? "owes" : "is owed"} ${balanceFormat.format(Math.abs(Number(balance)))}. Hand that balance to another account first.`}
+                    : `This account sits at ${balanceFormat.format(Number(balance))}. Hand that balance to another account first.`}
                 </FieldDescription>
               </Field>
               {settled ? (
