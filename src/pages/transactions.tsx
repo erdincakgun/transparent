@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import {
   ArrowRightIcon,
+  ArrowRightLeftIcon,
   CopyPlusIcon,
   DownloadIcon,
   PlusIcon,
@@ -15,6 +16,7 @@ import {
   TransactionDetailsDialog,
   type Transaction,
 } from "@/components/transaction-details-dialog";
+import { KindBadge } from "@/components/kind-badge";
 import { downloadCsv } from "@/lib/csv";
 import { fetchAllRows } from "@/lib/pagination";
 import { useDocumentTitle } from "@/hooks/use-document-title";
@@ -230,9 +232,7 @@ export default function TransactionsPage() {
                   </span>
                 </div>
                 <div className="flex min-w-0 items-center gap-1.5">
-                  <span className="shrink-0 rounded-sm border px-1.5 text-xs text-muted-foreground">
-                    {transaction.kind}
-                  </span>
+                  <KindBadge kind={transaction.kind} />
                   <span className="truncate text-sm text-muted-foreground">
                     {transaction.description}
                   </span>
@@ -306,8 +306,10 @@ export default function TransactionsPage() {
           ))}
         </div>
       ) : (
-        <div className="rounded-lg border p-8 text-center text-sm text-muted-foreground">
-          This ledger has no transactions yet
+        <div className="flex flex-col items-center gap-2 rounded-lg border p-8 text-center">
+          <ArrowRightLeftIcon className="size-6 text-muted-foreground" />
+          <p className="text-sm font-medium">This ledger has no transactions yet</p>
+          <p className="text-sm text-muted-foreground">Record what one account covered for another, or a payment settling it.</p>
         </div>
       )}
     </div>
