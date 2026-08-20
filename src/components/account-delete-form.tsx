@@ -5,6 +5,8 @@ import {
   FieldDescription,
   FieldError,
   FieldGroup,
+  FieldLabel,
+  FieldTitle,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
@@ -178,6 +180,9 @@ export function AccountDeleteForm({
       <form onSubmit={handleSubmit}>
         <FieldGroup>
           <Field>
+            {/* Not a control — `FieldTitle` is the div that looks like a
+                label without claiming to label anything focusable. */}
+            <FieldTitle>Ledger</FieldTitle>
             <div className="flex w-full flex-col rounded-lg border border-input bg-transparent px-2.5 py-2 text-left text-sm leading-tight dark:bg-input/30">
               <span className="truncate font-medium">{activeLedger.name}</span>
               {activeLedger.description ? (
@@ -200,6 +205,7 @@ export function AccountDeleteForm({
           ) : (
             <>
               <Field>
+                <FieldLabel htmlFor="name">Account</FieldLabel>
                 <Input
                   id="name"
                   name="name"
@@ -216,6 +222,7 @@ export function AccountDeleteForm({
               {settled ? (
                 <>
                   <Field>
+                    <FieldLabel htmlFor="code">Authenticator code</FieldLabel>
                     <Input
                       id="code"
                       name="code"
@@ -223,7 +230,7 @@ export function AccountDeleteForm({
                       inputMode="numeric"
                       autoComplete="one-time-code"
                       maxLength={6}
-                      placeholder="Enter the six digits from your app"
+                      placeholder="123456"
                       disabled={!factorIds.length}
                       required
                     />
@@ -250,15 +257,22 @@ export function AccountDeleteForm({
               ) : (
                 <>
                   <Field>
+                    <FieldLabel id="heir-label" htmlFor="heir">
+                      Hand the balance to
+                    </FieldLabel>
                     <Select
                       value={heirId}
                       onValueChange={(value: string | null) => setHeirId(value)}
                     >
-                      <SelectTrigger className="w-full">
+                      <SelectTrigger
+                        id="heir"
+                        aria-labelledby="heir-label heir"
+                        className="w-full"
+                      >
                         <SelectValue>
                           {(value: string | null) =>
                             accounts.find((item) => item.id === value)?.name ??
-                            "Hand the balance to"
+                            "Select an account"
                           }
                         </SelectValue>
                       </SelectTrigger>
