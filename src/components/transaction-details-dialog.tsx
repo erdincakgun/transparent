@@ -55,7 +55,10 @@ export function TransactionDetailsDialog({
         <DialogHeader>
           <DialogTitle className="flex flex-wrap items-center gap-1.5 pr-6">
             <span className="break-words">{fromName}</span>
+            {/* Same as the row: the arrow carries the direction and lucide
+                hides it from assistive tech, so the word goes in too. */}
             <ArrowRightIcon className="size-3.5 shrink-0 text-muted-foreground" />
+            <span className="sr-only">to</span>
             <span className="break-words">{toName}</span>
           </DialogTitle>
           <DialogDescription>
