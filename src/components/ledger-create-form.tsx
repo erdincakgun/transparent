@@ -1,7 +1,12 @@
 import { cn } from "@/lib/utils";
 import { Copy, CopyCheck, LogOutIcon, ShieldCheckIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Field, FieldError, FieldGroup } from "@/components/ui/field";
+import {
+  Field,
+  FieldError,
+  FieldGroup,
+  FieldLabel,
+} from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { useEffect, useState } from "react";
 import supabase from "@/lib/supabase/client";
@@ -75,21 +80,23 @@ export function LedgerCreateForm({
       <form onSubmit={handleSubmit}>
         <FieldGroup>
           <Field>
+            <FieldLabel htmlFor="name">Ledger name</FieldLabel>
             <Input
               id="name"
               name="name"
               type="text"
-              placeholder="Enter a ledger name"
               maxLength={100}
               required
             />
           </Field>
           <Field>
+            <FieldLabel htmlFor="description">
+              Description (optional)
+            </FieldLabel>
             <Input
               id="description"
               name="description"
               type="text"
-              placeholder="Enter a description (optional)"
               maxLength={1000}
             />
           </Field>
@@ -123,6 +130,7 @@ export function LedgerCreateForm({
                 </p>
               </Field>
               <Field>
+                <FieldLabel htmlFor="user_id">Your user ID</FieldLabel>
                 <div className="flex items-center gap-2">
                   <Input
                     id="user_id"
