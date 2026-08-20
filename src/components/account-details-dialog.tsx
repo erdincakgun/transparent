@@ -9,11 +9,6 @@ import {
 import { DetailField } from "@/components/detail-field";
 import { BalanceAmount } from "@/components/balance-amount";
 
-const balanceFormat = new Intl.NumberFormat(undefined, {
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 4,
-});
-
 export type Account = {
   id: string;
   name: string;
@@ -41,6 +36,7 @@ export function AccountDetailsDialog({
           <DialogDescription className="flex flex-wrap items-baseline gap-1.5">
             Balance
             <BalanceAmount balance={balance} className="text-sm" />
+            <span className="text-xs">credits in minus debits out</span>
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-3">
@@ -52,18 +48,6 @@ export function AccountDetailsDialog({
                 no description
               </span>
             )}
-          </DetailField>
-          {/* The row says "1,100.00 owes"; this is the signed figure that
-              sits behind it — the same "spell out what the row only hints at"
-              the raw uuids below are here for. */}
-          <DetailField label="Ledger balance">
-            <span className="tabular-nums">
-              {balanceFormat.format(Number(balance))}
-            </span>
-            <span className="text-xs text-muted-foreground">
-              {" "}
-              · credits in minus debits out
-            </span>
           </DetailField>
           <DetailField label="Opened by">
             <span className="font-mono text-xs break-all">
