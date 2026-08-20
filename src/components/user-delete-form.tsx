@@ -5,6 +5,8 @@ import {
   FieldDescription,
   FieldError,
   FieldGroup,
+  FieldLabel,
+  FieldTitle,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { useEffect, useState } from "react";
@@ -132,6 +134,9 @@ export function UserDeleteForm({
       <form onSubmit={handleSubmit}>
         <FieldGroup>
           <Field>
+            {/* Not a control — `FieldTitle` is the div that looks like a
+                label without claiming to label anything focusable. */}
+            <FieldTitle>Ledger</FieldTitle>
             <div className="flex w-full flex-col rounded-lg border border-input bg-transparent px-2.5 py-2 text-left text-sm leading-tight dark:bg-input/30">
               <span className="truncate font-medium">{activeLedger.name}</span>
               {activeLedger.description ? (
@@ -145,6 +150,7 @@ export function UserDeleteForm({
             </div>
           </Field>
           <Field>
+            <FieldLabel htmlFor="user_id">User ID</FieldLabel>
             <Input
               id="user_id"
               name="user_id"
@@ -158,6 +164,7 @@ export function UserDeleteForm({
             </FieldDescription>
           </Field>
           <Field>
+            <FieldLabel htmlFor="code">Authenticator code</FieldLabel>
             <Input
               id="code"
               name="code"
@@ -165,7 +172,7 @@ export function UserDeleteForm({
               inputMode="numeric"
               autoComplete="one-time-code"
               maxLength={6}
-              placeholder="Enter the six digits from your app"
+              placeholder="123456"
               disabled={!factorIds.length}
               required
             />
