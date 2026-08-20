@@ -1,45 +1,35 @@
 import { cn } from "@/lib/utils";
 
+/**
+ * `signDisplay: "exceptZero"` is what puts the + back on a credit: a bare
+ * "1,250.50" beside a "-1,100.00" reads as two unrelated figures, where "+" and
+ * "−" read as two directions of the same one.
+ */
 const balanceFormat = new Intl.NumberFormat(undefined, {
   minimumFractionDigits: 2,
   maximumFractionDigits: 4,
+  signDisplay: "exceptZero",
 });
 
 /**
- * The sign of a balance is the least obvious number in this app: it is credits
- * in minus debits out, so a *positive* balance means the account took in more
- * than it sent and is the one `settlement_transfers` puts on the paying side
- * (`payer.balance > 0` in `002_settlement_transfers.sql`). Reading "1,100.00"
- * and inferring "owes" from that is a step nobody should have to take, so the
- * standing is spelled out in words beside the figure.
+ * Every balance is one figure in one colour. A credit and a debit are the same
+ * quantity pointing two ways, not two kinds of thing, and coloring the sign
+ * implies a judgement the ledger does not make — so the sign carries it alone
+ * and the colour stays out of it.
  *
- * Colour repeats what the words already say rather than replacing it (1.4.1):
- * amber for a debt, green for a credit, muted for square. The figure itself is
- * shown unsigned, because "-1,100.00 is owed" asks the reader to cancel a minus
- * against a phrase; the signed ledger value is still one click away in the
- * account's dialog, and untouched in the CSV.
+ * What a sign cannot carry is *which way round it is*: the balance is credits
+ * in minus debits out, so a **positive** balance is the account that pays
+ * (`payer.balance > 0` in `002_settlement_transfers.sql`). That reading rides
+ * along as `sr-only` text, where it costs a screen reader nothing and a sighted
+ * reader no space.
  */
-export type Standing = "owes" | "owed" | "settled";
-
-export function standingOf(balance: string): Standing {
+function standingLabel(balance: string) {
   const value = Number(balance);
 
   if (!value) return "settled";
 
-  return value > 0 ? "owes" : "owed";
+  return value > 0 ? "owes this" : "is owed this";
 }
-
-const standingLabel: Record<Standing, string> = {
-  owes: "owes",
-  owed: "is owed",
-  settled: "settled",
-};
-
-const standingColor: Record<Standing, string> = {
-  owes: "text-warning",
-  owed: "text-success",
-  settled: "text-muted-foreground",
-};
 
 export function BalanceAmount({
   balance,
@@ -48,20 +38,10 @@ export function BalanceAmount({
   balance: string;
   className?: string;
 }) {
-  const standing = standingOf(balance);
-
   return (
-    <span
-      className={cn(
-        "inline-flex items-baseline gap-1.5",
-        standingColor[standing],
-        className,
-      )}
-    >
-      <span className="font-medium tabular-nums">
-        {balanceFormat.format(Math.abs(Number(balance)))}
-      </span>
-      <span className="text-xs font-normal">{standingLabel[standing]}</span>
+    <span className={cn("font-medium tabular-nums", className)}>
+      {balanceFormat.format(Number(balance))}
+      <span className="sr-only"> — {standingLabel(balance)}</span>
     </span>
   );
 }
