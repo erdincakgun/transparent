@@ -54,105 +54,101 @@
 }
 
 :root {
-    /* One brand hue (264, an indigo) tints every neutral in the theme — the
-       greys are not grey, they lean the same way the primary does, which is
-       what stops a coloured UI from looking like colour dropped onto grey.
-       Every pair below was measured, not eyeballed; the ratios that decided
-       each value are in the "Colour" part of CLAUDE.md. */
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.145 0.005 264);
+    /* Hue 295 — a violet — is the whole theme: it is --primary, it is --ring,
+       and a trace of it sits in every neutral, so the page reads as tinted
+       rather than grey. The three status hues are picked to sit *around* it:
+       jade 170 and gold 70 are its far side of the wheel, rose 12 its warm
+       edge. Every value below was measured before it was used (80 pairs across
+       both themes); the ratios that fixed each one are in "The palette" in
+       CLAUDE.md, and the numbers move together — brightening one in isolation
+       is what breaks them. */
+    --background: oklch(0.98 0.01 295);
+    --foreground: oklch(0.17 0.02 295);
+    /* Cards and popovers stay pure white so they lift off the tinted page. */
     --card: oklch(1 0 0);
-    --card-foreground: oklch(0.145 0.005 264);
+    --card-foreground: oklch(0.17 0.02 295);
     --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.145 0.005 264);
-    --primary: oklch(0.51 0.19 264);
-    --primary-foreground: oklch(0.985 0 0);
-    --secondary: oklch(0.968 0.006 264);
-    --secondary-foreground: oklch(0.3 0.09 264);
-    --muted: oklch(0.968 0.006 264);
-    /* 5.51:1 on the page and 5.02:1 over --muted; the stock 0.556 neutral was
-       4.34:1 over --muted, under what 1.4.3 asks of body text. */
-    --muted-foreground: oklch(0.52 0.02 264);
-    --accent: oklch(0.955 0.018 264);
-    --accent-foreground: oklch(0.42 0.16 264);
-    /* The three status colours are read as *text* — on the page, on a card and
-       on their own 10% tint (which is how the buttons and badges fill) — so
-       each is dark enough to clear 4.5:1 against all three. That is why the
-       amber is closer to bronze and the green closer to pine than a status
-       colour usually is: a pale one cannot be read. */
-    --success: oklch(0.5 0.115 158);
-    --success-foreground: oklch(0.985 0 0);
-    --warning: oklch(0.52 0.125 55);
-    --warning-foreground: oklch(0.985 0 0);
-    --destructive: oklch(0.53 0.21 27.325);
-    --border: oklch(0.918 0.008 264);
-    --input: oklch(0.918 0.008 264);
+    --popover-foreground: oklch(0.17 0.02 295);
+    --primary: oklch(0.5 0.24 295);
+    --primary-foreground: oklch(0.99 0.005 295);
+    --secondary: oklch(0.965 0.018 295);
+    --secondary-foreground: oklch(0.3 0.12 295);
+    --muted: oklch(0.965 0.018 295);
+    --muted-foreground: oklch(0.515 0.03 295);
+    --accent: oklch(0.95 0.026 295);
+    --accent-foreground: oklch(0.4 0.2 295);
+    /* Read as text — on the page, on a card, on --muted and on their own 10%
+       tint (how the badges and the destructive button fill) — so each clears
+       4.5:1 against all four. That is why the jade is deep and the gold is
+       nearer bronze here: the bright versions of these live in .dark, where
+       the surface behind them is near-black. */
+    --success: oklch(0.5 0.098 170);
+    --success-foreground: oklch(0.99 0.005 170);
+    --warning: oklch(0.52 0.112 70);
+    --warning-foreground: oklch(0.99 0.005 70);
+    --destructive: oklch(0.53 0.21 12);
+    --border: oklch(0.91 0.017 295);
+    --input: oklch(0.91 0.017 295);
     /* The boundary of a control is what says "you can type here", so 1.4.11
-       wants 3:1 of it — --border/--input are dividers and fills, too faint to
-       carry that. Inputs, select triggers and outline buttons use this. */
-    --input-border: oklch(0.62 0.03 264);
-    /* The focus ring is a state indicator (1.4.11 again) and now also the
-       brand colour: 5.99:1 on the page, 5.46:1 over --muted. */
-    --ring: oklch(0.51 0.19 264);
-    --chart-1: oklch(0.51 0.19 264);
-    --chart-2: oklch(0.5 0.115 158);
-    --chart-3: oklch(0.52 0.125 55);
-    --chart-4: oklch(0.53 0.21 27.325);
-    --chart-5: oklch(0.52 0.02 264);
+       holds it to 3:1 — --border/--input stay faint, for dividers and fills. */
+    --input-border: oklch(0.6 0.045 295);
+    --ring: oklch(0.5 0.24 295);
+    --chart-1: oklch(0.5 0.24 295);
+    --chart-2: oklch(0.5 0.098 170);
+    --chart-3: oklch(0.52 0.112 70);
+    --chart-4: oklch(0.53 0.21 12);
+    --chart-5: oklch(0.515 0.03 295);
     --radius: 0.625rem;
-    --sidebar: oklch(0.982 0.006 264);
-    --sidebar-foreground: oklch(0.145 0.005 264);
-    --sidebar-primary: oklch(0.51 0.19 264);
-    --sidebar-primary-foreground: oklch(0.985 0 0);
-    --sidebar-accent: oklch(0.945 0.025 264);
-    --sidebar-accent-foreground: oklch(0.42 0.16 264);
-    --sidebar-border: oklch(0.918 0.008 264);
-    --sidebar-ring: oklch(0.51 0.19 264);
+    --sidebar: oklch(0.975 0.013 295);
+    --sidebar-foreground: oklch(0.17 0.02 295);
+    --sidebar-primary: oklch(0.5 0.24 295);
+    --sidebar-primary-foreground: oklch(0.99 0.005 295);
+    --sidebar-accent: oklch(0.93 0.036 295);
+    --sidebar-accent-foreground: oklch(0.4 0.2 295);
+    --sidebar-border: oklch(0.91 0.017 295);
+    --sidebar-ring: oklch(0.5 0.24 295);
 }
 
 .dark {
-    /* The same hue, inverted rather than re-picked: the surfaces carry a
-       little of it so the app reads as one thing in either mode. --primary
-       flips to a light indigo with dark text on it, which is the only way a
-       filled button stays both vivid and readable on near-black. */
-    --background: oklch(0.145 0.006 264);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.205 0.008 264);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.205 0.008 264);
-    --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.73 0.13 264);
-    --primary-foreground: oklch(0.17 0.03 264);
-    --secondary: oklch(0.27 0.012 264);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.27 0.012 264);
-    --muted-foreground: oklch(0.72 0.02 264);
-    --accent: oklch(0.31 0.045 264);
-    --accent-foreground: oklch(0.92 0.03 264);
-    /* Bright here for the same reason they are dark in light mode: they are
-       read as text, against near-black. */
-    --success: oklch(0.76 0.15 158);
-    --success-foreground: oklch(0.19 0.04 158);
-    --warning: oklch(0.79 0.13 70);
-    --warning-foreground: oklch(0.19 0.04 70);
-    --destructive: oklch(0.704 0.18 22.216);
-    --border: oklch(0.3 0.02 264);
-    --input: oklch(0.3 0.02 264);
-    --input-border: oklch(0.54 0.03 264);
-    --ring: oklch(0.66 0.15 264);
-    --chart-1: oklch(0.73 0.13 264);
-    --chart-2: oklch(0.76 0.15 158);
-    --chart-3: oklch(0.79 0.13 70);
-    --chart-4: oklch(0.704 0.18 22.216);
-    --chart-5: oklch(0.72 0.02 264);
-    --sidebar: oklch(0.2 0.01 264);
-    --sidebar-foreground: oklch(0.985 0 0);
-    --sidebar-primary: oklch(0.73 0.13 264);
-    --sidebar-primary-foreground: oklch(0.17 0.03 264);
-    --sidebar-accent: oklch(0.32 0.055 264);
-    --sidebar-accent-foreground: oklch(0.93 0.03 264);
-    --sidebar-border: oklch(0.3 0.02 264);
-    --sidebar-ring: oklch(0.66 0.15 264);
+    /* Not a grey night — a plum one. The background carries enough of hue 295
+       to read as deep violet-black, and the status colours flip from deep to
+       luminous, which is the only way they stay legible against it. */
+    --background: oklch(0.16 0.022 295);
+    --foreground: oklch(0.97 0.01 295);
+    --card: oklch(0.22 0.028 295);
+    --card-foreground: oklch(0.97 0.01 295);
+    --popover: oklch(0.22 0.028 295);
+    --popover-foreground: oklch(0.97 0.01 295);
+    --primary: oklch(0.72 0.16 295);
+    --primary-foreground: oklch(0.18 0.04 295);
+    --secondary: oklch(0.28 0.03 295);
+    --secondary-foreground: oklch(0.97 0.01 295);
+    --muted: oklch(0.28 0.03 295);
+    --muted-foreground: oklch(0.73 0.03 295);
+    --accent: oklch(0.33 0.06 295);
+    --accent-foreground: oklch(0.92 0.04 295);
+    --success: oklch(0.82 0.16 170);
+    --success-foreground: oklch(0.2 0.04 170);
+    --warning: oklch(0.84 0.145 78);
+    --warning-foreground: oklch(0.2 0.04 78);
+    --destructive: oklch(0.72 0.175 12);
+    --border: oklch(0.32 0.03 295);
+    --input: oklch(0.32 0.03 295);
+    --input-border: oklch(0.57 0.05 295);
+    --ring: oklch(0.68 0.19 295);
+    --chart-1: oklch(0.72 0.16 295);
+    --chart-2: oklch(0.82 0.16 170);
+    --chart-3: oklch(0.84 0.145 78);
+    --chart-4: oklch(0.72 0.175 12);
+    --chart-5: oklch(0.73 0.03 295);
+    --sidebar: oklch(0.2 0.03 295);
+    --sidebar-foreground: oklch(0.97 0.01 295);
+    --sidebar-primary: oklch(0.72 0.16 295);
+    --sidebar-primary-foreground: oklch(0.18 0.04 295);
+    --sidebar-accent: oklch(0.33 0.07 295);
+    --sidebar-accent-foreground: oklch(0.92 0.04 295);
+    --sidebar-border: oklch(0.32 0.03 295);
+    --sidebar-ring: oklch(0.68 0.19 295);
 }
 
 /* 2.3.3: every animation here is decoration — the sidebar slide, the dialog
@@ -167,6 +163,28 @@
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
     }
+}
+
+@layer components {
+  /* Two soft lights — brand violet from the top left, its jade counterpart
+     from the top right — behind the full-screen forms, which are otherwise a
+     card floating on a flat field. The peaks are 8% and 6%, low enough that
+     text over them still clears its ratios (checked at the peak, not at the
+     average), and they are `background-image` only, so the painted
+     --background underneath still decides what the page fundamentally is. */
+  .aurora {
+    background-image:
+      radial-gradient(
+        60rem 40rem at 12% -12%,
+        color-mix(in oklch, var(--primary) 8%, transparent),
+        transparent 70%
+      ),
+      radial-gradient(
+        50rem 34rem at 100% 4%,
+        color-mix(in oklch, var(--success) 6%, transparent),
+        transparent 70%
+      );
+  }
 }
 
 @layer base {
