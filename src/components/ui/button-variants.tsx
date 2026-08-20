@@ -5,7 +5,12 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground hover:bg-primary/80",
+        // `bg-primary/80` would hover *towards the page* — fine when primary
+        // was near-black, but on a coloured fill it washes out and drops the
+        // label under 4.5:1. Mixing in --foreground darkens in light mode and
+        // lightens in dark, the same trick the secondary variant uses.
+        default:
+          "bg-primary text-primary-foreground hover:bg-[color-mix(in_oklch,var(--primary),var(--foreground)_12%)]",
         outline:
           "border-input-border bg-background hover:bg-muted hover:text-foreground aria-expanded:bg-muted aria-expanded:text-foreground dark:bg-input/30 dark:hover:bg-input/50",
         secondary:
