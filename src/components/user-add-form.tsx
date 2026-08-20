@@ -5,6 +5,7 @@ import {
   FieldDescription,
   FieldError,
   FieldGroup,
+  FieldLabel,
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import {
@@ -89,13 +90,20 @@ export function UserAddForm({
       <form onSubmit={handleSubmit}>
         <FieldGroup>
           <Field>
+            <FieldLabel id="ledger-label" htmlFor="ledger">
+              Ledger
+            </FieldLabel>
             <Select
               value={ledgerId ?? null}
               onValueChange={(value: string | null) => {
                 if (value) selectLedger(value);
               }}
             >
-              <SelectTrigger className="w-full data-[size=default]:h-auto">
+              <SelectTrigger
+                id="ledger"
+                aria-labelledby="ledger-label ledger"
+                className="w-full data-[size=default]:h-auto"
+              >
                 <SelectValue className="line-clamp-none">
                   {(value: string | null) => {
                     const ledger = ledgers.find((item) => item.id === value);
@@ -142,6 +150,7 @@ export function UserAddForm({
             </Select>
           </Field>
           <Field>
+            <FieldLabel htmlFor="user_id">User ID</FieldLabel>
             <Input
               id="user_id"
               name="user_id"
