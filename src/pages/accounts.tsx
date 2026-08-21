@@ -59,10 +59,6 @@ export default function AccountsPage() {
           .from("active_accounts")
           .select("*", { count: "exact", head: true })
           .eq("ledger_id", ledgerId),
-        // A balance is a derived number, so it is not one of the columns the
-        // CSV exports — but it is the thing an accounts report is read for.
-        // Fetched here beside the rows rather than taken off the page's
-        // state, so the file is one consistent read.
         format === "html"
           ? fetchAllRows<AccountBalance>((from, to) =>
               supabase
@@ -199,14 +195,9 @@ export default function AccountsPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      {/* The breadcrumb names the page for anyone who can see it; this is the
-          same name as a heading, which is what "jump to the main heading"
-          finds. Hidden because repeating it on screen would say it twice. */}
       <h1 className="sr-only">Accounts</h1>
       <div className="flex flex-wrap items-center gap-2">
         <div className="flex min-w-0 flex-col gap-0.5">
-          {/* 4.1.3: the row count is the result of the load, and it arrives
-              without focus moving anywhere. */}
           <p role="status" className="text-sm text-muted-foreground">
             {loading
               ? "Loading accounts"
@@ -283,9 +274,6 @@ export default function AccountsPage() {
                     variant="outline"
                     size="sm"
                     className="max-sm:size-9"
-                    // A row of identical "Edit description" buttons tells a
-                    // screen reader nothing about which account it edits
-                    // (2.4.4), so each one names its own.
                     aria-label={`Edit description for ${account.name}`}
                     nativeButton={false}
                     render={<Link to={`/accounts/describe/${account.id}`} />}
