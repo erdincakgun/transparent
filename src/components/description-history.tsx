@@ -1,4 +1,5 @@
 import { Actor } from "@/components/actor";
+import { formatTimestamp } from "@/lib/utils";
 
 export type DescriptionEntry = {
   key: string;
@@ -7,12 +8,6 @@ export type DescriptionEntry = {
   createdBy: string;
   original?: boolean;
 };
-
-const dateFormat = new Intl.DateTimeFormat(undefined, {
-  dateStyle: "medium",
-  timeStyle: "medium",
-  hourCycle: "h23",
-});
 
 export function DescriptionHistory({
   entries,
@@ -35,7 +30,7 @@ export function DescriptionHistory({
           <span className="text-xs text-muted-foreground">
             {entry.original ? "written" : "rewritten"} by{" "}
             <Actor userId={entry.createdBy} currentUserId={currentUserId} /> ·{" "}
-            {dateFormat.format(new Date(entry.createdAt))}
+            {formatTimestamp(entry.createdAt)}
           </span>
         </div>
       ))}
