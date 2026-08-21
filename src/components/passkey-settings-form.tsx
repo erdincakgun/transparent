@@ -23,13 +23,6 @@ import type { PasskeyListItem } from "@supabase/supabase-js";
 
 const dateFormat = new Intl.DateTimeFormat(undefined, { dateStyle: "medium" });
 
-/**
- * Passkeys are how you get *in*; the authenticator app is what unlocks the
- * data once you are. GoTrue enforces the same split from its side -- managing
- * passkeys is an `aal2`-only operation when MFA is enabled -- which is why this
- * screen sits behind `RequireMfa` beside `/mfa-settings` rather than anywhere a
- * half-signed-in session could reach.
- */
 export function PasskeySettingsForm({
   className,
   ...props
@@ -40,9 +33,6 @@ export function PasskeySettingsForm({
   const [busy, setBusy] = useState(false);
   const [renamingId, setRenamingId] = useState<string>();
   const [error, setError] = useState<string>();
-  // Read once for the same reason the sign-in button reads it: a browser with
-  // no WebAuthn can still list and remove passkeys made elsewhere, it just
-  // cannot make one here.
   const [canAdd] = useState(passkeysSupported);
 
   useEffect(() => {
@@ -186,12 +176,6 @@ export function PasskeySettingsForm({
             </form>
           ) : (
             <Field key={passkey.id} orientation="horizontal">
-              {/* The name is whatever the authenticator calls itself, so it can
-                  be long ("Google Password Manager"). `FieldTitle` ships
-                  `w-fit flex`, which sizes to the text and leaves `truncate`
-                  nothing to clip against -- at 320px the name then runs under
-                  the buttons. Bounding it and refusing to shrink the buttons is
-                  the same split the list rows use. */}
               <FieldContent className="min-w-0">
                 <FieldTitle className="block w-full truncate">
                   {passkey.friendly_name ?? "Passkey"}
@@ -202,8 +186,6 @@ export function PasskeySettingsForm({
                     : `Added ${dateFormat.format(new Date(passkey.created_at))}`}
                 </FieldDescription>
               </FieldContent>
-              {/* Every row repeats "Rename" and "Remove"; the passkey's own
-                  name is the only thing telling one from another (2.4.4). */}
               <Button
                 type="button"
                 variant="outline"
