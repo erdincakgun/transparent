@@ -1,72 +1,27 @@
-/**
- * The HTML sibling of `csv.ts`, and deliberately not a second copy of it. The
- * CSV is the ledger's raw columns — uuids, unformatted numerics — because a
- * spreadsheet wants the data. This is the *page*: resolved account names,
- * formatted figures, the kind badge, the palette. Anything less would be a CSV
- * with borders.
- *
- * It is one file with nothing beside it: no `<script>`, no external stylesheet,
- * no webfont. The palette below is therefore a hand copy of the tokens in
- * `src/index.css` rather than a Tailwind build — the two have to be kept in
- * step by hand, which is the price of a report that opens anywhere. Only the
- * tokens this report actually paints with are copied; the rest would be dead
- * weight in every exported file.
- *
- * Two places it parts from the screen on purpose:
- *
- * - **Nothing truncates.** A row on screen clamps its description to one line
- *   and hands the rest to a dialog, which is a piece of JavaScript this file
- *   cannot have. A report has no uniform row height to protect, so the text
- *   wraps and the whole 1000 characters are simply there — which is most of
- *   why one would want the HTML rather than the CSV.
- * - **Nobody is "you".** `Actor` says "you" for the reader's own id, and the
- *   reader of a file is not the person who wrote it. Every id in a report is
- *   the id; who made the file is stated once, in the header.
- */
-
-/** One `label value` pair on a row's secondary line. Segments join with " · ". */
 type ReportMetaSegment = {
   label?: string;
   value: string;
-  /** For a uuid fragment — the same `font-mono` treatment `Actor` gives it. */
   mono?: boolean;
 };
 
-/**
- * A plain name, or the two sides of a transfer. The pair renders as the app
- * renders it — "A → B" — with `relation` ("to", "pays") spelled out for anyone
- * the arrow says nothing to, exactly as the `sr-only` span does on screen.
- */
 type ReportHeading = string | { from: string; to: string; relation: string };
 
 type ReportRow = {
   key: string;
   heading: ReportHeading;
-  /** Renders `KindBadge`: the same word, icon and colour it uses on screen. */
   kind?: "accrual" | "payment";
   description?: string | null;
-  /**
-   * `standing` is `BalanceAmount`'s "owes this" / "is owed this" — the thing a
-   * sign cannot carry — and stays `sr-only` here for the same reason.
-   */
   amount?: { text: string; standing?: string };
   meta?: ReportMetaSegment[];
 };
 
 export type HtmlReport = {
-  /** The page's own name, as the breadcrumb says it: "Transactions". */
   title: string;
   ledger: { name: string; description?: string | null; id: string };
-  /** The reader of the file cannot ask who made it, so the file says. */
   exportedBy?: string;
   generatedAt: Date;
-  /** Already pluralised by the caller, the same string the page's status line shows. */
   count: string;
   rows: ReportRow[];
-  /**
-   * An empty list is a sentence here too. Settle-up's is the one that means
-   * everything worked, so it keeps its jade rather than reading as an absence.
-   */
   empty: { title: string; body: string; tone?: "muted" | "success" };
 };
 
@@ -78,11 +33,6 @@ const HTML_ESCAPES: Record<string, string> = {
   "'": "&#39;",
 };
 
-/**
- * The CSV guards against a leading `=` being read as a formula; the equivalent
- * hazard here is a ledger named `<script>`, so every interpolated value goes
- * through this. There is no path into the document that skips it.
- */
 const escape = (value: unknown) => {
   if (value === null || value === undefined) return "";
 
@@ -101,11 +51,6 @@ const stampFormat = new Intl.DateTimeFormat(undefined, {
 const icon = (paths: string) =>
   `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${paths}</svg>`;
 
-/**
- * `KindBadge`'s map, restated in markup. The word carries the meaning on its
- * own — 1.4.1 is satisfied without the icon — but the icon is what makes the
- * badge look like the one in the app, so the lucide paths come along.
- */
 const kinds = {
   accrual: {
     label: "Accrual",
@@ -180,14 +125,6 @@ const renderBody = (report: HtmlReport) => {
 const definition = (term: string, value: string, mono = false) =>
   `<div><dt>${escape(term)}</dt><dd${mono ? ' class="mono"' : ""}>${escape(value)}</dd></div>`;
 
-/**
- * Hue 295 and the three status hues, copied from `src/index.css`. The light
- * values are the base and the dark ones sit behind `prefers-color-scheme`, so
- * the file reads correctly for whoever opens it rather than for whoever made
- * it — the app's own toggle is a class, and a class needs script to flip.
- * `@media print` pins the light set back on, because a plum-black page is not
- * a thing to send to a printer.
- */
 const styles = `
     :root {
       color-scheme: light dark;
@@ -221,9 +158,6 @@ const styles = `
       margin: 0;
       padding: 2rem 1rem 4rem;
       background-color: var(--background);
-      /* The same two lights as .aurora — violet from the top left, jade from
-         the top right, at 8% and 6% — so the report opens looking like the
-         app's own full-screen pages rather than a bare document. */
       background-image:
         radial-gradient(60rem 40rem at 12% -12%, color-mix(in oklch, var(--primary) 8%, transparent), transparent 70%),
         radial-gradient(50rem 34rem at 100% 4%, color-mix(in oklch, var(--success) 6%, transparent), transparent 70%);
@@ -280,8 +214,6 @@ const styles = `
 
     .identity { display: flex; flex-direction: column; gap: 0.125rem; min-width: 0; }
     .pair { display: flex; flex-wrap: wrap; align-items: center; gap: 0.375rem; margin: 0; font-weight: 500; }
-    /* On screen a name that will not fit is truncated; a report is where it
-       finally has room, so long names wrap instead of turning into "E…". */
     .name { overflow-wrap: anywhere; }
     .arrow { flex-shrink: 0; color: var(--muted-foreground); }
 
@@ -350,8 +282,6 @@ const styles = `
       border-width: 0;
     }
 
-    /* The app's rows stack below sm and sit side by side above it; 640px is
-       Tailwind's sm, so the report breaks where the page it came from does. */
     @media (min-width: 640px) {
       body { padding: 3rem 2rem 5rem; }
       .facts { grid-template-columns: repeat(2, minmax(0, 1fr)); }
