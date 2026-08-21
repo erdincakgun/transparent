@@ -4,13 +4,6 @@ import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { Copy, CopyCheck } from "lucide-react";
 
-/**
- * The QR/secret/code markup shared by first-time enrollment and adding a
- * backup factor. Flow control (enroll/verify calls, navigation, errors,
- * submit/cancel buttons) stays with each caller, since those differ enough
- * between the two that folding them in here would mean mode-branching the
- * gate every session has to pass through.
- */
 export function MfaEnrollFields({
   qrCode,
   secret,
@@ -33,10 +26,6 @@ export function MfaEnrollFields({
     <>
       {qrCode ? (
         <Field>
-          {/* Field stretches its direct children with `*:w-full`, which would
-              squash a square QR into a rectangle — hence the wrapper. The SVG
-              carries no background of its own, so the white one is what makes
-              it scannable in the default dark theme. */}
           <div className="flex justify-center">
             <img
               src={qrCode}
