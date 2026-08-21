@@ -9,7 +9,7 @@ import { downloadCsv } from "@/lib/csv";
 import { downloadHtmlReport } from "@/lib/html-report";
 import { fetchAllRows } from "@/lib/pagination";
 import { useDocumentTitle } from "@/hooks/use-document-title";
-import { trimAmount } from "@/lib/utils";
+import { countLabel, formatAmount, trimAmount } from "@/lib/utils";
 import supabase from "@/lib/supabase/client";
 
 type SettlementTransfer = {
@@ -18,17 +18,18 @@ type SettlementTransfer = {
   amount: string;
 };
 
-const amountFormat = new Intl.NumberFormat(undefined, {
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 4,
-});
-
 const exportColumns = [
   "ledger_id",
   "from_account_id",
   "to_account_id",
   "amount::text",
 ];
+
+const emptyState = {
+  title: "Everyone in this ledger is settled up",
+  body: "Every account sits at zero — nobody owes anybody.",
+  tone: "success",
+} as const;
 
 export default function SettleUpPage() {
   useDocumentTitle("Settle Up");
@@ -43,7 +44,9 @@ export default function SettleUpPage() {
   const ledgerId = activeLedger?.id;
 
   async function handleExport(format: ExportFormat) {
-    if (!ledgerId || !activeLedger) return;
+    if (!activeLedger) return;
+
+    const ledgerId = activeLedger.id;
 
     setExporting(true);
 
@@ -102,14 +105,10 @@ export default function SettleUpPage() {
 
     downloadHtmlReport(`settlement_transfers-${ledgerId}.html`, {
       title: "Settle Up",
-      ledger: {
-        name: activeLedger.name,
-        description: activeLedger.description,
-        id: ledgerId,
-      },
+      ledger: activeLedger,
       exportedBy: currentUserId,
       generatedAt: new Date(),
-      count: `${exported.length} ${exported.length === 1 ? "transfer" : "transfers"} to settle up`,
+      count: `${countLabel(exported.length, "transfer")} to settle up`,
       rows: exported.map((transfer) => ({
         key: `${transfer.from_account_id}-${transfer.to_account_id}`,
         heading: {
@@ -117,13 +116,9 @@ export default function SettleUpPage() {
           to: nameById[transfer.to_account_id] ?? transfer.to_account_id,
           relation: "pays",
         },
-        amount: { text: amountFormat.format(Number(transfer.amount)) },
+        amount: { text: formatAmount(transfer.amount) },
       })),
-      empty: {
-        title: "Everyone in this ledger is settled up",
-        body: "Every account sits at zero — nobody owes anybody.",
-        tone: "success",
-      },
+      empty: emptyState,
     });
   }
 
@@ -166,7 +161,7 @@ export default function SettleUpPage() {
 
       if (cancelled) return;
 
-      setTransfers((transferResult.data ?? []) as SettlementTransfer[]);
+      setTransfers(transferResult.data ?? []);
       setAccountNames(
         Object.fromEntries(
           (accountResult.data ?? []).map((account) => [
@@ -195,7 +190,7 @@ export default function SettleUpPage() {
           <p role="status" className="text-sm text-muted-foreground">
             {loading
               ? "Loading transfers"
-              : `${transfers.length} ${transfers.length === 1 ? "transfer" : "transfers"} to settle up`}
+              : `${countLabel(transfers.length, "transfer")} to settle up`}
           </p>
           {activeLedger?.description ? (
             <p className="truncate text-xs text-muted-foreground">
@@ -242,7 +237,7 @@ export default function SettleUpPage() {
                 </div>
                 <div className="flex items-center justify-between gap-3 sm:shrink-0">
                   <span className="text-sm font-medium tabular-nums">
-                    {amountFormat.format(Number(transfer.amount))}
+                    {formatAmount(transfer.amount)}
                   </span>
                   <Button
                     size="sm"
@@ -257,7 +252,7 @@ export default function SettleUpPage() {
                             from: transfer.from_account_id,
                             to: transfer.to_account_id,
                             amount: trimAmount(transfer.amount),
-                            description: `settle up from the suggestions`,
+                            description: "settle up from the suggestions",
                             kind: "payment",
                           }).toString(),
                         }}
@@ -274,12 +269,8 @@ export default function SettleUpPage() {
       ) : (
         <div className="flex flex-col items-center gap-2 rounded-lg border border-success/30 bg-success/5 p-8 text-center">
           <CircleCheckIcon className="size-6 text-success" />
-          <p className="text-sm font-medium text-success">
-            Everyone in this ledger is settled up
-          </p>
-          <p className="text-sm text-muted-foreground">
-            Every account sits at zero — nobody owes anybody.
-          </p>
+          <p className="text-sm font-medium text-success">{emptyState.title}</p>
+          <p className="text-sm text-muted-foreground">{emptyState.body}</p>
         </div>
       )}
     </div>
