@@ -63,10 +63,6 @@ export default function SettleUpPage() {
           .from("settlement_transfers")
           .select("*", { count: "exact", head: true })
           .eq("ledger_id", ledgerId),
-        // Who pays whom is the whole answer this page gives, and the CSV
-        // gives it in ids. The report gives it in names, read here beside
-        // the transfers rather than off the page's state so the file is one
-        // consistent read.
         format === "html"
           ? fetchAllRows<{ id: string; name: string }>((from, to) =>
               supabase
@@ -240,8 +236,6 @@ export default function SettleUpPage() {
               >
                 <div className="flex min-w-0 items-center gap-1.5 text-sm font-medium">
                   <span className="truncate">{fromName}</span>
-                  {/* Who pays whom is the whole answer this page gives, and
-                      the arrow saying it is hidden from assistive tech. */}
                   <ArrowRightIcon className="size-3.5 shrink-0 text-muted-foreground" />
                   <span className="sr-only">pays</span>
                   <span className="truncate">{toName}</span>
@@ -250,8 +244,6 @@ export default function SettleUpPage() {
                   <span className="text-sm font-medium tabular-nums">
                     {amountFormat.format(Number(transfer.amount))}
                   </span>
-                  {/* The one thing this page asks you to do, so it is the
-                      one filled button on it. */}
                   <Button
                     size="sm"
                     className="max-sm:size-9"
@@ -280,8 +272,6 @@ export default function SettleUpPage() {
           })}
         </div>
       ) : (
-        // Nothing to settle is the one empty state that means everything
-        // worked, so it reads as an answer rather than an absence.
         <div className="flex flex-col items-center gap-2 rounded-lg border border-success/30 bg-success/5 p-8 text-center">
           <CircleCheckIcon className="size-6 text-success" />
           <p className="text-sm font-medium text-success">
