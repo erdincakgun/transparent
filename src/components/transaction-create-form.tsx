@@ -155,10 +155,6 @@ export function TransactionCreateForm({
       <form onSubmit={handleSubmit}>
         <FieldGroup>
           <Field>
-            {/* A select trigger is a button, and a button's name is its
-                content — which here is the chosen ledger, not what the
-                choice is for. Naming it after both the label and itself
-                keeps "Ledger, Household" rather than one or the other. */}
             <FieldLabel id="ledger-label" htmlFor="ledger">
               Ledger
             </FieldLabel>
