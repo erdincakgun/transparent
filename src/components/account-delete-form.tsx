@@ -1,4 +1,4 @@
-import { cn, trimAmount } from "@/lib/utils";
+import { cn, formatAmount, trimAmount } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
   Field,
@@ -29,11 +29,6 @@ import {
 type Account = { id: string; name: string };
 
 type AccountBalance = { balance: string };
-
-const balanceFormat = new Intl.NumberFormat(undefined, {
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 4,
-});
 
 export function AccountDeleteForm({
   className,
@@ -214,7 +209,7 @@ export function AccountDeleteForm({
                 <FieldDescription>
                   {settled
                     ? "The account keeps its transactions. It can no longer send or receive."
-                    : `This account sits at ${balanceFormat.format(Number(balance))}. Hand that balance to another account first.`}
+                    : `This account sits at ${formatAmount(balance)}. Hand that balance to another account first.`}
                 </FieldDescription>
               </Field>
               {settled ? (
