@@ -1,4 +1,4 @@
-import { cn } from "@/lib/utils";
+import { cn, shortId } from "@/lib/utils";
 
 export function Actor({
   userId,
@@ -16,7 +16,7 @@ export function Actor({
       title={userId}
       className={cn(self ? undefined : "font-mono", className)}
     >
-      {self ? "you" : userId.slice(0, 8)}
+      {self ? "you" : shortId(userId)}
     </span>
   );
 }
