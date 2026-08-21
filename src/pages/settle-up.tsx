@@ -1,15 +1,12 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
-import {
-  ArrowRightIcon,
-  CircleCheckIcon,
-  DownloadIcon,
-  HandCoinsIcon,
-} from "lucide-react";
+import { ArrowRightIcon, CircleCheckIcon, HandCoinsIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLedger } from "@/components/ledger-provider";
+import { ExportMenu, type ExportFormat } from "@/components/export-menu";
 import { downloadCsv } from "@/lib/csv";
+import { downloadHtmlReport } from "@/lib/html-report";
 import { fetchAllRows } from "@/lib/pagination";
 import { useDocumentTitle } from "@/hooks/use-document-title";
 import { trimAmount } from "@/lib/utils";
@@ -38,38 +35,57 @@ export default function SettleUpPage() {
   const { activeLedger, loading: ledgerLoading } = useLedger();
   const [transfers, setTransfers] = useState<SettlementTransfer[]>([]);
   const [accountNames, setAccountNames] = useState<Record<string, string>>({});
+  const [currentUserId, setCurrentUserId] = useState<string>();
   const [loading, setLoading] = useState(true);
   const [exporting, setExporting] = useState(false);
   const [error, setError] = useState<string>();
 
   const ledgerId = activeLedger?.id;
 
-  async function handleExport() {
-    if (!ledgerId) return;
+  async function handleExport(format: ExportFormat) {
+    if (!ledgerId || !activeLedger) return;
 
     setExporting(true);
 
-    const [{ data, error }, { count, error: countError }] = await Promise.all([
-      fetchAllRows((from, to) =>
+    const [{ data, error }, { count, error: countError }, names] =
+      await Promise.all([
+        fetchAllRows((from, to) =>
+          supabase
+            .from("settlement_transfers")
+            .select(exportColumns.join(", "))
+            .eq("ledger_id", ledgerId)
+            .order("amount", { ascending: false })
+            .order("from_account_id", { ascending: true })
+            .order("to_account_id", { ascending: true })
+            .range(from, to),
+        ),
         supabase
           .from("settlement_transfers")
-          .select(exportColumns.join(", "))
-          .eq("ledger_id", ledgerId)
-          .order("amount", { ascending: false })
-          .order("from_account_id", { ascending: true })
-          .order("to_account_id", { ascending: true })
-          .range(from, to),
-      ),
-      supabase
-        .from("settlement_transfers")
-        .select("*", { count: "exact", head: true })
-        .eq("ledger_id", ledgerId),
-    ]);
+          .select("*", { count: "exact", head: true })
+          .eq("ledger_id", ledgerId),
+        // Who pays whom is the whole answer this page gives, and the CSV
+        // gives it in ids. The report gives it in names, read here beside
+        // the transfers rather than off the page's state so the file is one
+        // consistent read.
+        format === "html"
+          ? fetchAllRows<{ id: string; name: string }>((from, to) =>
+              supabase
+                .from("accounts")
+                .select("id, name")
+                .eq("ledger_id", ledgerId)
+                .order("id", { ascending: true })
+                .range(from, to),
+            )
+          : Promise.resolve({
+              data: [] as { id: string; name: string }[],
+              error: null,
+            }),
+      ]);
 
     setExporting(false);
 
-    if (error ?? countError) {
-      setError((error ?? countError)?.message);
+    if (error ?? countError ?? names.error) {
+      setError((error ?? countError ?? names.error)?.message);
       return;
     }
 
@@ -78,7 +94,41 @@ export default function SettleUpPage() {
       return;
     }
 
-    downloadCsv(`settlement_transfers-${ledgerId}.csv`, exportColumns, data);
+    if (format === "csv") {
+      downloadCsv(`settlement_transfers-${ledgerId}.csv`, exportColumns, data);
+      return;
+    }
+
+    const exported = data as unknown as SettlementTransfer[];
+    const nameById = Object.fromEntries(
+      (names.data ?? []).map((account) => [account.id, account.name]),
+    );
+
+    downloadHtmlReport(`settlement_transfers-${ledgerId}.html`, {
+      title: "Settle Up",
+      ledger: {
+        name: activeLedger.name,
+        description: activeLedger.description,
+        id: ledgerId,
+      },
+      exportedBy: currentUserId,
+      generatedAt: new Date(),
+      count: `${exported.length} ${exported.length === 1 ? "transfer" : "transfers"} to settle up`,
+      rows: exported.map((transfer) => ({
+        key: `${transfer.from_account_id}-${transfer.to_account_id}`,
+        heading: {
+          from: nameById[transfer.from_account_id] ?? transfer.from_account_id,
+          to: nameById[transfer.to_account_id] ?? transfer.to_account_id,
+          relation: "pays",
+        },
+        amount: { text: amountFormat.format(Number(transfer.amount)) },
+      })),
+      empty: {
+        title: "Everyone in this ledger is settled up",
+        body: "Every account sits at zero — nobody owes anybody.",
+        tone: "success",
+      },
+    });
   }
 
   useEffect(() => {
@@ -96,7 +146,7 @@ export default function SettleUpPage() {
       setLoading(true);
       setError(undefined);
 
-      const [transferResult, accountResult] = await Promise.all([
+      const [transferResult, accountResult, sessionResult] = await Promise.all([
         fetchAllRows<SettlementTransfer>((from, to) =>
           supabase
             .from("settlement_transfers")
@@ -115,6 +165,7 @@ export default function SettleUpPage() {
             .order("id", { ascending: true })
             .range(from, to),
         ),
+        supabase.auth.getSession(),
       ]);
 
       if (cancelled) return;
@@ -128,6 +179,7 @@ export default function SettleUpPage() {
           ]),
         ),
       );
+      setCurrentUserId(sessionResult.data.session?.user.id);
       setError((transferResult.error ?? accountResult.error)?.message);
       setLoading(false);
     };
@@ -155,15 +207,12 @@ export default function SettleUpPage() {
             </p>
           ) : null}
         </div>
-        <Button
-          className="ml-auto"
-          variant="outline"
-          disabled={exporting || !ledgerId}
-          onClick={handleExport}
-        >
-          <DownloadIcon />
-          Export CSV
-        </Button>
+        <div className="ml-auto">
+          <ExportMenu
+            disabled={exporting || !ledgerId}
+            onExport={handleExport}
+          />
+        </div>
       </div>
 
       {error ? (
