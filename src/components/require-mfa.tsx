@@ -4,17 +4,6 @@ import supabase from "@/lib/supabase/client";
 
 type Status = "loading" | "enroll" | "verify" | "verified";
 
-/**
- * The assurance-level gate. `is_mfa_verified()` already refuses every row to a
- * session that is not `aal2`, so this only decides which screen the user sees
- * on the way there — never whether their data is safe.
- *
- * | currentLevel | nextLevel | status |
- * |---|---|---|
- * | `aal1` | `aal1` | no factor enrolled yet |
- * | `aal1` | `aal2` | factor enrolled, this session not elevated |
- * | `aal2` | `aal2` | elevated |
- */
 export function RequireMfa() {
   const [status, setStatus] = useState<Status>("loading");
 
