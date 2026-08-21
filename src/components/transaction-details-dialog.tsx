@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/dialog";
 import { DetailField } from "@/components/detail-field";
 import { KindBadge } from "@/components/kind-badge";
+import { formatAmount, formatTimestamp } from "@/lib/utils";
 
 export type Transaction = {
   id: string;
@@ -21,17 +22,6 @@ export type Transaction = {
   created_by: string;
 };
 
-const amountFormat = new Intl.NumberFormat(undefined, {
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 4,
-});
-
-const dateFormat = new Intl.DateTimeFormat(undefined, {
-  dateStyle: "medium",
-  timeStyle: "medium",
-  hourCycle: "h23",
-});
-
 export function TransactionDetailsDialog({
   transaction,
   fromName,
@@ -43,7 +33,7 @@ export function TransactionDetailsDialog({
   toName?: string;
   currentUserId?: string;
 }) {
-  const amount = amountFormat.format(Number(transaction.amount));
+  const amount = formatAmount(transaction.amount);
 
   return (
     <Dialog>
@@ -62,7 +52,7 @@ export function TransactionDetailsDialog({
           </DialogTitle>
           <DialogDescription className="flex flex-wrap items-center gap-1.5">
             <KindBadge kind={transaction.kind} />
-            {dateFormat.format(new Date(transaction.created_at))}
+            {formatTimestamp(transaction.created_at)}
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-3">
