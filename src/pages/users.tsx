@@ -10,18 +10,17 @@ import { downloadCsv } from "@/lib/csv";
 import { downloadHtmlReport } from "@/lib/html-report";
 import { fetchAllRows } from "@/lib/pagination";
 import { useDocumentTitle } from "@/hooks/use-document-title";
-import { shortId } from "@/lib/utils";
+import { countLabel, formatTimestamp, shortId } from "@/lib/utils";
 import supabase from "@/lib/supabase/client";
 
 type LedgerUser = { user_id: string; added_by: string; added_at: string };
 
-const dateFormat = new Intl.DateTimeFormat(undefined, {
-  dateStyle: "medium",
-  timeStyle: "medium",
-  hourCycle: "h23",
-});
-
 const exportColumns = ["ledger_id", "user_id", "added_by", "added_at"];
+
+const emptyState = {
+  title: "This ledger has no users yet",
+  body: "Members are added by user ID — theirs is in their sidebar menu.",
+};
 
 export default function UsersPage() {
   useDocumentTitle("Users");
@@ -36,7 +35,9 @@ export default function UsersPage() {
   const ledgerId = activeLedger?.id;
 
   async function handleExport(format: ExportFormat) {
-    if (!ledgerId || !activeLedger) return;
+    if (!activeLedger) return;
+
+    const ledgerId = activeLedger.id;
 
     setExporting(true);
 
@@ -77,26 +78,19 @@ export default function UsersPage() {
 
     downloadHtmlReport(`ledgers_users-${ledgerId}.html`, {
       title: "Users",
-      ledger: {
-        name: activeLedger.name,
-        description: activeLedger.description,
-        id: ledgerId,
-      },
+      ledger: activeLedger,
       exportedBy: currentUserId,
       generatedAt: new Date(),
-      count: `${exported.length} ${exported.length === 1 ? "user" : "users"}`,
+      count: countLabel(exported.length, "user"),
       rows: exported.map((user) => ({
         key: user.user_id,
         heading: user.user_id,
         meta: [
           { label: "added by", value: shortId(user.added_by), mono: true },
-          { value: dateFormat.format(new Date(user.added_at)) },
+          { value: formatTimestamp(user.added_at) },
         ],
       })),
-      empty: {
-        title: "This ledger has no users yet",
-        body: "Members are added by user ID — theirs is in their sidebar menu.",
-      },
+      empty: emptyState,
     });
   }
 
@@ -158,7 +152,7 @@ export default function UsersPage() {
           <p role="status" className="text-sm text-muted-foreground">
             {loading
               ? "Loading users"
-              : `${users.length} ${users.length === 1 ? "user" : "users"}`}
+              : countLabel(users.length, "user")}
           </p>
           {activeLedger?.description ? (
             <p className="truncate text-xs text-muted-foreground">
@@ -210,7 +204,7 @@ export default function UsersPage() {
                 <span className="truncate text-xs text-muted-foreground">
                   added by{" "}
                   <Actor userId={user.added_by} currentUserId={currentUserId} />{" "}
-                  · {dateFormat.format(new Date(user.added_at))}
+                  · {formatTimestamp(user.added_at)}
                 </span>
               </div>
               <div className="flex items-center justify-end gap-3 sm:shrink-0">
@@ -270,8 +264,8 @@ export default function UsersPage() {
       ) : (
         <div className="flex flex-col items-center gap-2 rounded-lg border p-8 text-center">
           <UsersIcon className="size-6 text-muted-foreground" />
-          <p className="text-sm font-medium">This ledger has no users yet</p>
-          <p className="text-sm text-muted-foreground">Members are added by user ID — theirs is in their sidebar menu.</p>
+          <p className="text-sm font-medium">{emptyState.title}</p>
+          <p className="text-sm text-muted-foreground">{emptyState.body}</p>
         </div>
       )}
     </div>
