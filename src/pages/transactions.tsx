@@ -79,12 +79,6 @@ export default function TransactionsPage() {
           .from("transactions")
           .select("*", { count: "exact", head: true })
           .eq("ledger_id", ledgerId),
-        // The CSV carries account ids because a spreadsheet can join them
-        // back; the report carries names, so the HTML path reads them in the
-        // same breath as the rows rather than off the page's state — one
-        // consistent read. `accounts`, not `active_accounts`: a retired
-        // account keeps the history it took part in, and that history has to
-        // stay readable.
         format === "html"
           ? fetchAllRows<{ id: string; name: string }>((from, to) =>
               supabase
@@ -279,10 +273,6 @@ export default function TransactionsPage() {
                   <span className="truncate">
                     {accountNames[transaction.from_account_id]}
                   </span>
-                  {/* The arrow is the only thing saying which way the money
-                      went, and lucide hides its icons from assistive tech —
-                      so the direction is spelled out for anyone not seeing
-                      it (1.3.1, 1.3.3). */}
                   <ArrowRightIcon className="size-3.5 shrink-0 text-muted-foreground" />
                   <span className="sr-only">to</span>
                   <span className="truncate">
@@ -314,8 +304,6 @@ export default function TransactionsPage() {
                     variant="outline"
                     size="sm"
                     className="max-sm:size-9"
-                    // One "Duplicate transaction" per row is indistinguishable
-                    // from the next when read out of context (2.4.4).
                     aria-label={`Duplicate transaction: ${transaction.description}`}
                     nativeButton={false}
                     render={
