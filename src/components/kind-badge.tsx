@@ -1,16 +1,6 @@
 import { HandCoinsIcon, ReceiptTextIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-/**
- * An accrual is money one account spent for another; a payment only clears a
- * balance an accrual created. Both move the same figure, and only the accrual
- * reaches `account_income_expense` — which makes the distinction worth reading
- * at a glance rather than deducing.
- *
- * Three things say which is which: the word (unchanged), an icon, and the
- * colour. Colour alone would fail 1.4.1, and the word alone was what the row
- * had before.
- */
 const kinds = {
   accrual: {
     label: "Accrual",
