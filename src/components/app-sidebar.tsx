@@ -67,9 +67,6 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <LedgerSwitcher />
       </SidebarHeader>
       <SidebarContent>
-        {/* The sidebar itself is a plain div, so without this the four page
-            links are a list in no landmark at all — nothing for a screen
-            reader's "go to navigation" to land on. */}
         <nav aria-label="Ledger pages">
           <NavItems navItems={data.navItems} />
         </nav>
