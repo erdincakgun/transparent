@@ -20,12 +20,22 @@ import { downloadCsv } from "@/lib/csv";
 import { downloadHtmlReport } from "@/lib/html-report";
 import { fetchAllRows } from "@/lib/pagination";
 import { useDocumentTitle } from "@/hooks/use-document-title";
-import { balanceStanding, formatBalance, shortId } from "@/lib/utils";
+import {
+  balanceStanding,
+  countLabel,
+  formatBalance,
+  shortId,
+} from "@/lib/utils";
 import supabase from "@/lib/supabase/client";
 
 type AccountBalance = { id: string; balance: string };
 
 const exportColumns = ["id", "ledger_id", "name", "description", "created_by"];
+
+const emptyState = {
+  title: "This ledger has no accounts yet",
+  body: "An account is one person or pot the ledger keeps a balance for.",
+};
 
 export default function AccountsPage() {
   useDocumentTitle("Accounts");
@@ -40,7 +50,9 @@ export default function AccountsPage() {
   const ledgerId = activeLedger?.id;
 
   async function handleExport(format: ExportFormat) {
-    if (!ledgerId || !activeLedger) return;
+    if (!activeLedger) return;
+
+    const ledgerId = activeLedger.id;
 
     setExporting(true);
 
@@ -90,7 +102,7 @@ export default function AccountsPage() {
 
     const exported = data as unknown as Account[];
     const balanceById = Object.fromEntries(
-      ((figures.data ?? []) as AccountBalance[]).map((row) => [
+      (figures.data ?? []).map((row) => [
         row.id,
         row.balance,
       ]),
@@ -98,14 +110,10 @@ export default function AccountsPage() {
 
     downloadHtmlReport(`accounts-${ledgerId}.html`, {
       title: "Accounts",
-      ledger: {
-        name: activeLedger.name,
-        description: activeLedger.description,
-        id: ledgerId,
-      },
+      ledger: activeLedger,
       exportedBy: currentUserId,
       generatedAt: new Date(),
-      count: `${exported.length} ${exported.length === 1 ? "account" : "accounts"}`,
+      count: countLabel(exported.length, "account"),
       rows: exported.map((account) => {
         const balance = balanceById[account.id] ?? "0";
 
@@ -126,10 +134,7 @@ export default function AccountsPage() {
           ],
         };
       }),
-      empty: {
-        title: "This ledger has no accounts yet",
-        body: "An account is one person or pot the ledger keeps a balance for.",
-      },
+      empty: emptyState,
     });
   }
 
@@ -175,7 +180,7 @@ export default function AccountsPage() {
       setAccounts(accountResult.data ?? []);
       setBalances(
         Object.fromEntries(
-          ((balanceResult.data ?? []) as AccountBalance[]).map((row) => [
+          (balanceResult.data ?? []).map((row) => [
             row.id,
             row.balance,
           ]),
@@ -201,7 +206,7 @@ export default function AccountsPage() {
           <p role="status" className="text-sm text-muted-foreground">
             {loading
               ? "Loading accounts"
-              : `${accounts.length} ${accounts.length === 1 ? "account" : "accounts"}`}
+              : countLabel(accounts.length, "account")}
           </p>
           {activeLedger?.description ? (
             <p className="truncate text-xs text-muted-foreground">
@@ -235,71 +240,75 @@ export default function AccountsPage() {
         </div>
       ) : accounts.length ? (
         <div className="divide-y overflow-hidden rounded-lg border">
-          {accounts.map((account) => (
-            <div
-              key={account.id}
-              className="relative flex flex-col gap-2 px-4 py-3 transition-colors hover:bg-muted/50 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
-            >
-              <AccountDetailsDialog
-                account={account}
-                balance={balances[account.id] ?? "0"}
-                currentUserId={currentUserId}
-              />
-              <div className="flex min-w-0 flex-col gap-0.5">
-                <span className="truncate text-sm font-medium">
-                  {account.name}
-                </span>
-                {account.description ? (
-                  <span className="truncate text-sm text-muted-foreground">
-                    {account.description}
+          {accounts.map((account) => {
+            const balance = balances[account.id] ?? "0";
+
+            return (
+              <div
+                key={account.id}
+                className="relative flex flex-col gap-2 px-4 py-3 transition-colors hover:bg-muted/50 sm:flex-row sm:items-center sm:justify-between sm:gap-4"
+              >
+                <AccountDetailsDialog
+                  account={account}
+                  balance={balance}
+                  currentUserId={currentUserId}
+                />
+                <div className="flex min-w-0 flex-col gap-0.5">
+                  <span className="truncate text-sm font-medium">
+                    {account.name}
                   </span>
-                ) : null}
-              </div>
-              <div className="flex items-center justify-between gap-3 sm:shrink-0">
-                <div className="flex min-w-0 flex-col gap-0.5 sm:items-end">
-                  <BalanceAmount
-                    className="text-sm"
-                    balance={balances[account.id] ?? "0"}
-                  />
-                  <span className="truncate text-xs text-muted-foreground">
-                    opened by{" "}
-                    <Actor
-                      userId={account.created_by}
-                      currentUserId={currentUserId}
+                  {account.description ? (
+                    <span className="truncate text-sm text-muted-foreground">
+                      {account.description}
+                    </span>
+                  ) : null}
+                </div>
+                <div className="flex items-center justify-between gap-3 sm:shrink-0">
+                  <div className="flex min-w-0 flex-col gap-0.5 sm:items-end">
+                    <BalanceAmount
+                      className="text-sm"
+                      balance={balance}
                     />
-                  </span>
-                </div>
-                <div className="relative z-20 flex shrink-0 items-center gap-2 sm:gap-3">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="max-sm:size-9"
-                    aria-label={`Edit description for ${account.name}`}
-                    nativeButton={false}
-                    render={<Link to={`/accounts/describe/${account.id}`} />}
-                  >
-                    <PencilLine />
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    className="max-sm:size-9"
-                    aria-label={`Delete account ${account.name}`}
-                    nativeButton={false}
-                    render={<Link to={`/accounts/delete/${account.id}`} />}
-                  >
-                    <Trash2Icon />
-                  </Button>
+                    <span className="truncate text-xs text-muted-foreground">
+                      opened by{" "}
+                      <Actor
+                        userId={account.created_by}
+                        currentUserId={currentUserId}
+                      />
+                    </span>
+                  </div>
+                  <div className="relative z-20 flex shrink-0 items-center gap-2 sm:gap-3">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="max-sm:size-9"
+                      aria-label={`Edit description for ${account.name}`}
+                      nativeButton={false}
+                      render={<Link to={`/accounts/describe/${account.id}`} />}
+                    >
+                      <PencilLine />
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="max-sm:size-9"
+                      aria-label={`Delete account ${account.name}`}
+                      nativeButton={false}
+                      render={<Link to={`/accounts/delete/${account.id}`} />}
+                    >
+                      <Trash2Icon />
+                    </Button>
+                  </div>
                 </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       ) : (
         <div className="flex flex-col items-center gap-2 rounded-lg border p-8 text-center">
           <ReceiptTextIcon className="size-6 text-muted-foreground" />
-          <p className="text-sm font-medium">This ledger has no accounts yet</p>
-          <p className="text-sm text-muted-foreground">An account is one person or pot the ledger keeps a balance for.</p>
+          <p className="text-sm font-medium">{emptyState.title}</p>
+          <p className="text-sm text-muted-foreground">{emptyState.body}</p>
         </div>
       )}
     </div>
