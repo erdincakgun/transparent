@@ -87,8 +87,6 @@ export default function UsersPage() {
       count: `${exported.length} ${exported.length === 1 ? "user" : "users"}`,
       rows: exported.map((user) => ({
         key: user.user_id,
-        // A member *is* a uuid here — `auth.users` is not exposed, which is
-        // the same reason membership is granted by id in the first place.
         heading: user.user_id,
         meta: [
           { label: "added by", value: shortId(user.added_by), mono: true },
@@ -234,10 +232,6 @@ export default function UsersPage() {
                           <LogOutIcon />
                           Leave
                         </Button>
-                        {/* `title` is a hover affordance, and a disabled
-                            button cannot be focused to reach one by keyboard
-                            either — so the reason is also in the row as text
-                            only a screen reader reads out. */}
                         <span id="leave-blocked" className="sr-only">
                           A ledger has to keep at least one member
                         </span>
@@ -261,8 +255,6 @@ export default function UsersPage() {
                     variant="destructive"
                     size="sm"
                     className="max-sm:h-9"
-                    // Every row's button says just "Delete"; the user id is
-                    // all that tells one row from the next (2.4.4).
                     aria-label={`Delete user ${user.user_id}`}
                     nativeButton={false}
                     render={<Link to={`/users/delete/${user.user_id}`} />}
