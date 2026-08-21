@@ -190,8 +190,6 @@ export function AccountDescribeForm({
       <form onSubmit={handleSubmit}>
         <FieldGroup>
           <Field>
-            {/* Not a control — `FieldTitle` is the div that looks like a
-                label without claiming to label anything focusable. */}
             <FieldTitle>Ledger</FieldTitle>
             <div className="flex w-full flex-col rounded-lg border border-input bg-transparent px-2.5 py-2 text-left text-sm leading-tight dark:bg-input/30">
               <span className="truncate font-medium">{activeLedger.name}</span>
