@@ -33,8 +33,6 @@ export function LoginForm({
         location.search,
     ),
   );
-  // A device fact, not a server rule, so it is read once rather than submitted
-  // into: a browser without WebAuthn is offered the email path alone.
   const [passkeyOffered] = useState(passkeysSupported);
 
   async function handleSubmit(e: { preventDefault: () => void; target: any }) {
@@ -67,12 +65,6 @@ export function LoginForm({
     setEmailSent(true);
   }
 
-  /**
-   * A passkey replaces the magic link, not the authenticator app: the session
-   * it mints is `aal1`, so `RequireMfa` still sends it to `/mfa-verify` and the
-   * database still refuses every row until a code has been entered. What it
-   * saves is the round trip through the inbox.
-   */
   async function handlePasskey() {
     setSubmitted(true);
     setError(undefined);
@@ -81,8 +73,6 @@ export function LoginForm({
       options: { captchaToken },
     });
 
-    // The challenge spends the Turnstile token whether or not the ceremony that
-    // follows it succeeds, so the widget is reset either way.
     turnstileRef.current?.reset();
     setCaptchaToken(undefined);
 
@@ -102,8 +92,6 @@ export function LoginForm({
           {emailSent ? (
             <>
               <Field>
-                {/* The form it replaces is gone from under the cursor, so
-                    this has to announce itself (4.1.3). */}
                 <p role="status" className="text-center text-sm text-muted-foreground">
                   Check your inbox
                 </p>
@@ -112,11 +100,6 @@ export function LoginForm({
           ) : (
             <>
               <Field>
-                {/* A placeholder is not a label: it is gone the moment you
-                    type, which is exactly when you want to check what the
-                    field was for (3.3.2). `autocomplete` is what lets a
-                    browser fill it for someone who finds typing costly
-                    (1.3.5). */}
                 <FieldLabel htmlFor="email">Email address</FieldLabel>
                 <Input
                   id="email"
