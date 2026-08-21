@@ -634,10 +634,48 @@ each page's `exportColumns` carries the column so it lands in the CSV too.
 `deleted_accounts.deleted_by` is the one attribution column with no screen — the app never
 lists retired accounts.
 
-**CSV export** is `downloadCsv(filename, columns, rows)` (`src/lib/csv.ts`), on every list
-page. The same `exportColumns` array is both the PostgREST select list and the CSV header
-— `downloadCsv` splits each column on `::` so a `amount::text` cast still exports as
-`amount`.
+**Export offers two formats, and they are not two renderings of one thing.** Every list
+page's toolbar carries a single `ExportMenu` (`components/export-menu.tsx`) rather than
+two buttons — the toolbars already wrap at 320px and a second button is what pushes the
+primary action onto its own row. Both formats come off the *same* verified read: the
+existing `Promise.all` of rows + exact count, with a `format === "html"` third leg for
+what only the report needs. If the count does not match, neither file is written.
+
+- **CSV** is `downloadCsv(filename, columns, rows)` (`src/lib/csv.ts`) — the ledger's raw
+  columns, because a spreadsheet wants the data. The same `exportColumns` array is both
+  the PostgREST select list and the CSV header; `downloadCsv` splits each column on `::`
+  so a `amount::text` cast still exports as `amount`. **This path is unchanged** and is
+  the one to leave alone.
+- **HTML** is `downloadHtmlReport(filename, report)` (`src/lib/html-report.ts`) — the
+  *page*, as one self-contained file: no `<script>`, no external stylesheet, no webfont.
+  Each page maps its rows into the `HtmlReport` shape (heading, `kind`, description,
+  amount, meta segments) and the lib renders the markup, so the mapping stays with the
+  page that knows what its columns mean and the styling stays in one place.
+
+What the report needs that the CSV columns do not carry, it fetches beside them:
+transactions and settle-up read `accounts` for names (`accounts`, not `active_accounts` —
+a retired account keeps its history), accounts reads `account_balances`, since a balance
+is a view and never an exported column. Only on the HTML path; the CSV's `Promise.all`
+still resolves the third leg to an empty array.
+
+Three things the report does deliberately differently from the screen:
+
+- **Nothing truncates.** A row on screen clamps its description and hands the rest to a
+  dialog, which is JavaScript the file cannot have — and a report has no uniform row
+  height to protect, so the text wraps. That is most of the reason to take the HTML.
+- **Nobody is "you".** `Actor` says "you" for the reader's own id, and the reader of a
+  file is not the person who made it. Every row shows the id; who exported is stated once
+  in the header, beside the ledger id, the row count and the timestamp.
+- **The theme is the reader's.** The palette is a hand copy of the tokens in
+  `src/index.css` — light on `:root`, dark under `prefers-color-scheme`, light pinned back
+  on under `@media print`. The app's own toggle is a class and a class needs script.
+  **The copy is manual: a palette change in `index.css` does not reach the report.**
+
+Everything interpolated goes through the module's `escape` — that is the HTML equivalent
+of the CSV's leading-`=` guard, and there is no path into the document that skips it.
+`shortId`, `formatBalance` and `balanceStanding` live in `lib/utils.ts` rather than inside
+`Actor`/`BalanceAmount`, because the report renders the same three things into a file
+those components cannot go.
 
 **Transaction prefill travels through the query string.** `/transaction-create` reads
 `from`, `to`, `amount`, `description`, `kind` search params; the duplicate and revert
