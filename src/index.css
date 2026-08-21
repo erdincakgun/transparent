@@ -54,17 +54,8 @@
 }
 
 :root {
-    /* Hue 295 — a violet — is the whole theme: it is --primary, it is --ring,
-       and a trace of it sits in every neutral, so the page reads as tinted
-       rather than grey. The three status hues are picked to sit *around* it:
-       jade 170 and gold 70 are its far side of the wheel, rose 12 its warm
-       edge. Every value below was measured before it was used (80 pairs across
-       both themes); the ratios that fixed each one are in "The palette" in
-       CLAUDE.md, and the numbers move together — brightening one in isolation
-       is what breaks them. */
     --background: oklch(0.98 0.01 295);
     --foreground: oklch(0.17 0.02 295);
-    /* Cards and popovers stay pure white so they lift off the tinted page. */
     --card: oklch(1 0 0);
     --card-foreground: oklch(0.17 0.02 295);
     --popover: oklch(1 0 0);
@@ -77,11 +68,6 @@
     --muted-foreground: oklch(0.515 0.03 295);
     --accent: oklch(0.95 0.026 295);
     --accent-foreground: oklch(0.4 0.2 295);
-    /* Read as text — on the page, on a card, on --muted and on their own 10%
-       tint (how the badges and the destructive button fill) — so each clears
-       4.5:1 against all four. That is why the jade is deep and the gold is
-       nearer bronze here: the bright versions of these live in .dark, where
-       the surface behind them is near-black. */
     --success: oklch(0.5 0.098 170);
     --success-foreground: oklch(0.99 0.005 170);
     --warning: oklch(0.52 0.112 70);
@@ -89,8 +75,6 @@
     --destructive: oklch(0.53 0.21 12);
     --border: oklch(0.91 0.017 295);
     --input: oklch(0.91 0.017 295);
-    /* The boundary of a control is what says "you can type here", so 1.4.11
-       holds it to 3:1 — --border/--input stay faint, for dividers and fills. */
     --input-border: oklch(0.6 0.045 295);
     --ring: oklch(0.5 0.24 295);
     --chart-1: oklch(0.5 0.24 295);
@@ -110,9 +94,6 @@
 }
 
 .dark {
-    /* Not a grey night — a plum one. The background carries enough of hue 295
-       to read as deep violet-black, and the status colours flip from deep to
-       luminous, which is the only way they stay legible against it. */
     --background: oklch(0.16 0.022 295);
     --foreground: oklch(0.97 0.01 295);
     --card: oklch(0.22 0.028 295);
@@ -151,9 +132,6 @@
     --sidebar-ring: oklch(0.68 0.19 295);
 }
 
-/* 2.3.3: every animation here is decoration — the sidebar slide, the dialog
-   zoom, the skeleton pulse. Someone who asks the OS for less motion gets the
-   end state instead of the journey. */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -166,12 +144,6 @@
 }
 
 @layer components {
-  /* Two soft lights — brand violet from the top left, its jade counterpart
-     from the top right — behind the full-screen forms, which are otherwise a
-     card floating on a flat field. The peaks are 8% and 6%, low enough that
-     text over them still clears its ratios (checked at the peak, not at the
-     average), and they are `background-image` only, so the painted
-     --background underneath still decides what the page fundamentally is. */
   .aurora {
     background-image:
       radial-gradient(
