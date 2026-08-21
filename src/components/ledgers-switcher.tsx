@@ -41,9 +41,6 @@ export function LedgerSwitcher() {
           >
             <div className="grid flex-1 text-left text-sm leading-tight group-data-[collapsible=icon]:hidden">
               <span className="truncate font-medium">{activeLedger?.name}</span>
-              {/* `size="lg"` leaves room for one line under the name, so the
-                  description takes it when there is one and the id keeps it
-                  otherwise. Both are still spelled out in the dropdown. */}
               <span className="truncate text-xs">
                 {activeLedger?.description ?? activeLedger?.id}
               </span>
