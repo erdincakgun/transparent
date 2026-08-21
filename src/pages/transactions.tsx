@@ -4,7 +4,6 @@ import {
   ArrowRightIcon,
   ArrowRightLeftIcon,
   CopyPlusIcon,
-  DownloadIcon,
   PlusIcon,
   Undo2,
 } from "lucide-react";
@@ -17,10 +16,12 @@ import {
   type Transaction,
 } from "@/components/transaction-details-dialog";
 import { KindBadge } from "@/components/kind-badge";
+import { ExportMenu, type ExportFormat } from "@/components/export-menu";
 import { downloadCsv } from "@/lib/csv";
+import { downloadHtmlReport } from "@/lib/html-report";
 import { fetchAllRows } from "@/lib/pagination";
 import { useDocumentTitle } from "@/hooks/use-document-title";
-import { trimAmount } from "@/lib/utils";
+import { shortId, trimAmount } from "@/lib/utils";
 import supabase from "@/lib/supabase/client";
 
 const amountFormat = new Intl.NumberFormat(undefined, {
@@ -58,31 +59,51 @@ export default function TransactionsPage() {
 
   const ledgerId = activeLedger?.id;
 
-  async function handleExport() {
-    if (!ledgerId) return;
+  async function handleExport(format: ExportFormat) {
+    if (!ledgerId || !activeLedger) return;
 
     setExporting(true);
 
-    const [{ data, error }, { count, error: countError }] = await Promise.all([
-      fetchAllRows((from, to) =>
+    const [{ data, error }, { count, error: countError }, names] =
+      await Promise.all([
+        fetchAllRows((from, to) =>
+          supabase
+            .from("transactions")
+            .select(exportColumns.join(", "))
+            .eq("ledger_id", ledgerId)
+            .order("created_at", { ascending: false })
+            .order("id", { ascending: true })
+            .range(from, to),
+        ),
         supabase
           .from("transactions")
-          .select(exportColumns.join(", "))
-          .eq("ledger_id", ledgerId)
-          .order("created_at", { ascending: false })
-          .order("id", { ascending: true })
-          .range(from, to),
-      ),
-      supabase
-        .from("transactions")
-        .select("*", { count: "exact", head: true })
-        .eq("ledger_id", ledgerId),
-    ]);
+          .select("*", { count: "exact", head: true })
+          .eq("ledger_id", ledgerId),
+        // The CSV carries account ids because a spreadsheet can join them
+        // back; the report carries names, so the HTML path reads them in the
+        // same breath as the rows rather than off the page's state — one
+        // consistent read. `accounts`, not `active_accounts`: a retired
+        // account keeps the history it took part in, and that history has to
+        // stay readable.
+        format === "html"
+          ? fetchAllRows<{ id: string; name: string }>((from, to) =>
+              supabase
+                .from("accounts")
+                .select("id, name")
+                .eq("ledger_id", ledgerId)
+                .order("id", { ascending: true })
+                .range(from, to),
+            )
+          : Promise.resolve({
+              data: [] as { id: string; name: string }[],
+              error: null,
+            }),
+      ]);
 
     setExporting(false);
 
-    if (error ?? countError) {
-      setError((error ?? countError)?.message);
+    if (error ?? countError ?? names.error) {
+      setError((error ?? countError ?? names.error)?.message);
       return;
     }
 
@@ -91,7 +112,48 @@ export default function TransactionsPage() {
       return;
     }
 
-    downloadCsv(`transactions-${ledgerId}.csv`, exportColumns, data);
+    if (format === "csv") {
+      downloadCsv(`transactions-${ledgerId}.csv`, exportColumns, data);
+      return;
+    }
+
+    const exported = data as unknown as Transaction[];
+    const nameById = Object.fromEntries(
+      (names.data ?? []).map((account) => [account.id, account.name]),
+    );
+
+    downloadHtmlReport(`transactions-${ledgerId}.html`, {
+      title: "Transactions",
+      ledger: {
+        name: activeLedger.name,
+        description: activeLedger.description,
+        id: ledgerId,
+      },
+      exportedBy: currentUserId,
+      generatedAt: new Date(),
+      count: `${exported.length} ${exported.length === 1 ? "transaction" : "transactions"}`,
+      rows: exported.map((transaction) => ({
+        key: transaction.id,
+        heading: {
+          from:
+            nameById[transaction.from_account_id] ??
+            transaction.from_account_id,
+          to: nameById[transaction.to_account_id] ?? transaction.to_account_id,
+          relation: "to",
+        },
+        kind: transaction.kind,
+        description: transaction.description,
+        amount: { text: amountFormat.format(Number(transaction.amount)) },
+        meta: [
+          { value: dateFormat.format(new Date(transaction.created_at)) },
+          { label: "by", value: shortId(transaction.created_by), mono: true },
+        ],
+      })),
+      empty: {
+        title: "This ledger has no transactions yet",
+        body: "Record what one account covered for another, or a payment settling it.",
+      },
+    });
   }
 
   useEffect(() => {
@@ -173,14 +235,10 @@ export default function TransactionsPage() {
           ) : null}
         </div>
         <div className="ml-auto flex flex-wrap items-center gap-2">
-          <Button
-            variant="outline"
+          <ExportMenu
             disabled={exporting || !ledgerId}
-            onClick={handleExport}
-          >
-            <DownloadIcon />
-            Export CSV
-          </Button>
+            onExport={handleExport}
+          />
           <Button
             nativeButton={false}
             render={<Link to="/transaction-create" />}
