@@ -1,19 +1,16 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
-import {
-  DownloadIcon,
-  LogOutIcon,
-  PlusIcon,
-  Trash2Icon,
-  UsersIcon,
-} from "lucide-react";
+import { LogOutIcon, PlusIcon, Trash2Icon, UsersIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLedger } from "@/components/ledger-provider";
 import { Actor } from "@/components/actor";
+import { ExportMenu, type ExportFormat } from "@/components/export-menu";
 import { downloadCsv } from "@/lib/csv";
+import { downloadHtmlReport } from "@/lib/html-report";
 import { fetchAllRows } from "@/lib/pagination";
 import { useDocumentTitle } from "@/hooks/use-document-title";
+import { shortId } from "@/lib/utils";
 import supabase from "@/lib/supabase/client";
 
 type LedgerUser = { user_id: string; added_by: string; added_at: string };
@@ -38,8 +35,8 @@ export default function UsersPage() {
 
   const ledgerId = activeLedger?.id;
 
-  async function handleExport() {
-    if (!ledgerId) return;
+  async function handleExport(format: ExportFormat) {
+    if (!ledgerId || !activeLedger) return;
 
     setExporting(true);
 
@@ -71,7 +68,38 @@ export default function UsersPage() {
       return;
     }
 
-    downloadCsv(`ledgers_users-${ledgerId}.csv`, exportColumns, data);
+    if (format === "csv") {
+      downloadCsv(`ledgers_users-${ledgerId}.csv`, exportColumns, data);
+      return;
+    }
+
+    const exported = data as unknown as LedgerUser[];
+
+    downloadHtmlReport(`ledgers_users-${ledgerId}.html`, {
+      title: "Users",
+      ledger: {
+        name: activeLedger.name,
+        description: activeLedger.description,
+        id: ledgerId,
+      },
+      exportedBy: currentUserId,
+      generatedAt: new Date(),
+      count: `${exported.length} ${exported.length === 1 ? "user" : "users"}`,
+      rows: exported.map((user) => ({
+        key: user.user_id,
+        // A member *is* a uuid here — `auth.users` is not exposed, which is
+        // the same reason membership is granted by id in the first place.
+        heading: user.user_id,
+        meta: [
+          { label: "added by", value: shortId(user.added_by), mono: true },
+          { value: dateFormat.format(new Date(user.added_at)) },
+        ],
+      })),
+      empty: {
+        title: "This ledger has no users yet",
+        body: "Members are added by user ID — theirs is in their sidebar menu.",
+      },
+    });
   }
 
   useEffect(() => {
@@ -147,14 +175,10 @@ export default function UsersPage() {
           ) : null}
         </div>
         <div className="ml-auto flex flex-wrap items-center gap-2">
-          <Button
-            variant="outline"
+          <ExportMenu
             disabled={exporting || !ledgerId}
-            onClick={handleExport}
-          >
-            <DownloadIcon />
-            Export CSV
-          </Button>
+            onExport={handleExport}
+          />
           <Button nativeButton={false} render={<Link to="/user-add" />}>
             <PlusIcon />
             Add user
