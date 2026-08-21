@@ -13,6 +13,26 @@ Single-page React app talking directly to Supabase (Postgres + Auth) from the br
 There is no backend of our own — no API server, no edge functions. The database *is* the
 backend.
 
+## No comments in `src/`
+
+**Nothing under `src/` carries a comment.** Not a `//` line, not a trailing one after
+code, not a `/* */` block, not a `/** */` doc comment, not a `{/* */}` in JSX, not one
+in `index.css` or in the CSS `html-report.ts` embeds in its template literals. The
+files were stripped deliberately; **never add one back, and never reintroduce one a
+diff happens to remove.** This is a standing house rule, not a judgement about any
+particular comment — a comment that would genuinely help is still not to be added, and
+"but this bit is subtle" is not an exception.
+
+What a comment would have said goes in **this file** instead, which is already where
+the reasoning for every non-obvious decision in this repo lives — the palette, the MFA
+gate, the append-only contract. Explaining something in `CLAUDE.md` is the substitute
+for explaining it in the code. What is left after that, the code itself carries: a
+clearer name, a named constant, a small extraction.
+
+`supabase/migrations/` already holds no comments and stays that way. The pgTAP suites
+in `supabase/tests/database/` are the one exception in the repo — their `--` headers
+say what each file asserts and stay where they are.
+
 ## Commands
 
 ```bash
