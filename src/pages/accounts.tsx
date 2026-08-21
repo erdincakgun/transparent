@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router";
 import {
-  DownloadIcon,
   PencilLine,
   PlusIcon,
   ReceiptTextIcon,
@@ -16,9 +15,12 @@ import {
   type Account,
 } from "@/components/account-details-dialog";
 import { BalanceAmount } from "@/components/balance-amount";
+import { ExportMenu, type ExportFormat } from "@/components/export-menu";
 import { downloadCsv } from "@/lib/csv";
+import { downloadHtmlReport } from "@/lib/html-report";
 import { fetchAllRows } from "@/lib/pagination";
 import { useDocumentTitle } from "@/hooks/use-document-title";
+import { balanceStanding, formatBalance, shortId } from "@/lib/utils";
 import supabase from "@/lib/supabase/client";
 
 type AccountBalance = { id: string; balance: string };
@@ -37,31 +39,46 @@ export default function AccountsPage() {
 
   const ledgerId = activeLedger?.id;
 
-  async function handleExport() {
-    if (!ledgerId) return;
+  async function handleExport(format: ExportFormat) {
+    if (!ledgerId || !activeLedger) return;
 
     setExporting(true);
 
-    const [{ data, error }, { count, error: countError }] = await Promise.all([
-      fetchAllRows((from, to) =>
+    const [{ data, error }, { count, error: countError }, figures] =
+      await Promise.all([
+        fetchAllRows((from, to) =>
+          supabase
+            .from("active_accounts")
+            .select(exportColumns.join(", "))
+            .eq("ledger_id", ledgerId)
+            .order("name")
+            .order("id", { ascending: true })
+            .range(from, to),
+        ),
         supabase
           .from("active_accounts")
-          .select(exportColumns.join(", "))
-          .eq("ledger_id", ledgerId)
-          .order("name")
-          .order("id", { ascending: true })
-          .range(from, to),
-      ),
-      supabase
-        .from("active_accounts")
-        .select("*", { count: "exact", head: true })
-        .eq("ledger_id", ledgerId),
-    ]);
+          .select("*", { count: "exact", head: true })
+          .eq("ledger_id", ledgerId),
+        // A balance is a derived number, so it is not one of the columns the
+        // CSV exports — but it is the thing an accounts report is read for.
+        // Fetched here beside the rows rather than taken off the page's
+        // state, so the file is one consistent read.
+        format === "html"
+          ? fetchAllRows<AccountBalance>((from, to) =>
+              supabase
+                .from("account_balances")
+                .select("id, balance::text")
+                .eq("ledger_id", ledgerId)
+                .order("id", { ascending: true })
+                .range(from, to),
+            )
+          : Promise.resolve({ data: [] as AccountBalance[], error: null }),
+      ]);
 
     setExporting(false);
 
-    if (error ?? countError) {
-      setError((error ?? countError)?.message);
+    if (error ?? countError ?? figures.error) {
+      setError((error ?? countError ?? figures.error)?.message);
       return;
     }
 
@@ -70,7 +87,54 @@ export default function AccountsPage() {
       return;
     }
 
-    downloadCsv(`accounts-${ledgerId}.csv`, exportColumns, data);
+    if (format === "csv") {
+      downloadCsv(`accounts-${ledgerId}.csv`, exportColumns, data);
+      return;
+    }
+
+    const exported = data as unknown as Account[];
+    const balanceById = Object.fromEntries(
+      ((figures.data ?? []) as AccountBalance[]).map((row) => [
+        row.id,
+        row.balance,
+      ]),
+    );
+
+    downloadHtmlReport(`accounts-${ledgerId}.html`, {
+      title: "Accounts",
+      ledger: {
+        name: activeLedger.name,
+        description: activeLedger.description,
+        id: ledgerId,
+      },
+      exportedBy: currentUserId,
+      generatedAt: new Date(),
+      count: `${exported.length} ${exported.length === 1 ? "account" : "accounts"}`,
+      rows: exported.map((account) => {
+        const balance = balanceById[account.id] ?? "0";
+
+        return {
+          key: account.id,
+          heading: account.name,
+          description: account.description,
+          amount: {
+            text: formatBalance(balance),
+            standing: balanceStanding(balance),
+          },
+          meta: [
+            {
+              label: "opened by",
+              value: shortId(account.created_by),
+              mono: true,
+            },
+          ],
+        };
+      }),
+      empty: {
+        title: "This ledger has no accounts yet",
+        body: "An account is one person or pot the ledger keeps a balance for.",
+      },
+    });
   }
 
   useEffect(() => {
@@ -155,14 +219,10 @@ export default function AccountsPage() {
           ) : null}
         </div>
         <div className="ml-auto flex flex-wrap items-center gap-2">
-          <Button
-            variant="outline"
+          <ExportMenu
             disabled={exporting || !ledgerId}
-            onClick={handleExport}
-          >
-            <DownloadIcon />
-            Export CSV
-          </Button>
+            onExport={handleExport}
+          />
           <Button nativeButton={false} render={<Link to="/account-create" />}>
             <PlusIcon />
             Add account
