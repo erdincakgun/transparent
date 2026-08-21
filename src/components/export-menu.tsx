@@ -14,16 +14,6 @@ import {
 
 export type ExportFormat = "csv" | "html";
 
-/**
- * One button rather than two. The four list toolbars already wrap at 320px —
- * they are `flex-wrap` with `ml-auto` for exactly that reason — and a second
- * export button is what pushes the primary action onto a row of its own on a
- * phone. A menu costs one extra click for something nobody does twice a day.
- *
- * Each item says what the format is *for*, because "CSV or HTML" is a question
- * about tooling and "spreadsheet or readable page" is the question actually
- * being asked.
- */
 export function ExportMenu({
   disabled,
   onExport,
